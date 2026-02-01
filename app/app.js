@@ -129,7 +129,11 @@ async function loadNotebooks() {
 
     if (response.error) {
       const loginText = I18n ? I18n.get('popup_loginRequired') : 'Login to NotebookLM first';
-      notebookSelect.innerHTML = `<option value="">${loginText}</option>`;
+      notebookSelect.textContent = '';
+      const loginOption = document.createElement('option');
+      loginOption.value = '';
+      loginOption.textContent = loginText;
+      notebookSelect.appendChild(loginOption);
       showStatus('error', response.error);
       return;
     }
@@ -141,16 +145,22 @@ async function loadNotebooks() {
     const lastNotebook = storage.lastNotebook;
 
     // Populate select
+    notebookSelect.textContent = '';
     if (notebooks.length === 0) {
       const noNotebooksText = I18n ? I18n.get('popup_noNotebooks') : 'No notebooks found';
-      notebookSelect.innerHTML = `<option value="">${noNotebooksText}</option>`;
+      const emptyOption = document.createElement('option');
+      emptyOption.value = '';
+      emptyOption.textContent = noNotebooksText;
+      notebookSelect.appendChild(emptyOption);
     } else {
       const sourcesText = I18n ? I18n.get('common_sources') : 'sources';
-      notebookSelect.innerHTML = notebooks.map(nb => `
-        <option value="${nb.id}" ${nb.id === lastNotebook ? 'selected' : ''}>
-          ${nb.emoji} ${nb.name} (${nb.sources} ${sourcesText})
-        </option>
-      `).join('');
+      notebooks.forEach(nb => {
+        const option = document.createElement('option');
+        option.value = nb.id;
+        option.textContent = `${nb.emoji} ${nb.name} (${nb.sources} ${sourcesText})`;
+        if (nb.id === lastNotebook) option.selected = true;
+        notebookSelect.appendChild(option);
+      });
     }
 
     updateImportButtons();
@@ -171,28 +181,59 @@ async function loadTabs() {
 
   } catch (error) {
     const failedText = I18n ? I18n.get('bulk_failedToLoad') : 'Failed to load tabs';
-    tabsContainer.innerHTML = `<div style="padding: 24px; text-align: center; color: #5f6368;">${failedText}</div>`;
+    tabsContainer.textContent = '';
+    const failedDiv = document.createElement('div');
+    failedDiv.style.cssText = 'padding: 24px; text-align: center; color: #5f6368;';
+    failedDiv.textContent = failedText;
+    tabsContainer.appendChild(failedDiv);
   }
 }
 
 // Render tabs list
 function renderTabs() {
+  tabsContainer.textContent = '';
+
   if (allTabs.length === 0) {
     const noTabsText = I18n ? I18n.get('bulk_noTabs') : 'No tabs found';
-    tabsContainer.innerHTML = `<div style="padding: 24px; text-align: center; color: #5f6368;">${noTabsText}</div>`;
+    const emptyDiv = document.createElement('div');
+    emptyDiv.style.cssText = 'padding: 24px; text-align: center; color: #5f6368;';
+    emptyDiv.textContent = noTabsText;
+    tabsContainer.appendChild(emptyDiv);
     return;
   }
 
-  tabsContainer.innerHTML = allTabs.map(tab => `
-    <div class="tab-item ${selectedTabs.has(tab.id) ? 'selected' : ''}" data-id="${tab.id}">
-      <input type="checkbox" ${selectedTabs.has(tab.id) ? 'checked' : ''}>
-      <img class="tab-item-favicon" src="${tab.favIconUrl || 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌐</text></svg>'}" alt="">
-      <div class="tab-item-info">
-        <div class="tab-item-title">${escapeHtml(tab.title || 'Untitled')}</div>
-        <div class="tab-item-url">${escapeHtml(tab.url)}</div>
-      </div>
-    </div>
-  `).join('');
+  allTabs.forEach(tab => {
+    const item = document.createElement('div');
+    item.className = `tab-item ${selectedTabs.has(tab.id) ? 'selected' : ''}`;
+    item.dataset.id = tab.id;
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = selectedTabs.has(tab.id);
+
+    const favicon = document.createElement('img');
+    favicon.className = 'tab-item-favicon';
+    favicon.src = tab.favIconUrl || 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌐</text></svg>';
+    favicon.alt = '';
+
+    const info = document.createElement('div');
+    info.className = 'tab-item-info';
+
+    const title = document.createElement('div');
+    title.className = 'tab-item-title';
+    title.textContent = tab.title || 'Untitled';
+
+    const url = document.createElement('div');
+    url.className = 'tab-item-url';
+    url.textContent = tab.url;
+
+    info.appendChild(title);
+    info.appendChild(url);
+    item.appendChild(checkbox);
+    item.appendChild(favicon);
+    item.appendChild(info);
+    tabsContainer.appendChild(item);
+  });
 
   // Add click listeners
   tabsContainer.querySelectorAll('.tab-item').forEach(item => {
@@ -285,10 +326,10 @@ function updateImportButtons() {
   const importTabsText = I18n ? I18n.get('bulk_importTabs') : 'Import Selected Tabs';
 
   importLinksBtn.disabled = !hasNotebook || links.length === 0;
-  importLinksBtn.innerHTML = `📦 ${importLinksText} (${links.length})`;
+  importLinksBtn.textContent = `📦 ${importLinksText} (${links.length})`;
 
   importTabsBtn.disabled = !hasNotebook || selectedTabs.size === 0;
-  importTabsBtn.innerHTML = `📦 ${importTabsText} (${selectedTabs.size})`;
+  importTabsBtn.textContent = `📦 ${importTabsText} (${selectedTabs.size})`;
 }
 
 // Handle new notebook creation
@@ -300,7 +341,7 @@ async function handleNewNotebook() {
   try {
     newNotebookBtn.disabled = true;
     const creatingText = I18n ? I18n.get('popup_loading') : 'Creating...';
-    newNotebookBtn.innerHTML = `⏳ ${creatingText}`;
+    newNotebookBtn.textContent = `⏳ ${creatingText}`;
 
     const response = await sendMessage({
       cmd: 'create-notebook',
@@ -323,7 +364,7 @@ async function handleNewNotebook() {
   } finally {
     newNotebookBtn.disabled = false;
     const createText = I18n ? I18n.get('bulk_createNewNotebook') : 'Create New Notebook';
-    newNotebookBtn.innerHTML = `➕ ${createText}`;
+    newNotebookBtn.textContent = `➕ ${createText}`;
   }
 }
 
@@ -458,7 +499,28 @@ function showStatus(type, message) {
   }
 
   statusDiv.className = `status visible ${type}`;
-  statusDiv.innerHTML = message;
+  statusDiv.textContent = '';
+  // For messages with HTML links, parse safely
+  if (message.includes('<a ')) {
+    const temp = document.createElement('template');
+    temp.innerHTML = message;
+    // Only allow text nodes and <a>/<br> elements
+    for (const node of temp.content.childNodes) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        statusDiv.appendChild(document.createTextNode(node.textContent));
+      } else if (node.nodeName === 'A') {
+        const a = document.createElement('a');
+        a.href = node.getAttribute('href');
+        a.target = '_blank';
+        a.textContent = node.textContent;
+        statusDiv.appendChild(a);
+      } else if (node.nodeName === 'BR') {
+        statusDiv.appendChild(document.createElement('br'));
+      }
+    }
+  } else {
+    statusDiv.textContent = message;
+  }
 
   // Auto-hide after 5 seconds for success/info messages
   if (type === 'success' || type === 'info') {
@@ -471,13 +533,6 @@ function showStatus(type, message) {
 // Hide status message
 function hideStatus() {
   statusDiv.className = 'status';
-}
-
-// Escape HTML
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
 }
 
 // Send message to background script
@@ -518,7 +573,7 @@ async function loadSettings() {
 
     // Populate account selector
     if (settingsAccountSelect) {
-      settingsAccountSelect.innerHTML = '';
+      settingsAccountSelect.textContent = '';
 
       if (accounts.length > 0) {
         accounts.forEach((acc, index) => {

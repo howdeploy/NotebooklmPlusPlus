@@ -2,6 +2,21 @@
 // Handles API calls and message passing between content scripts and popup
 
 // ============================================
+// Utilities
+// ============================================
+
+async function fetchWithTimeout(url, options = {}, timeout = 30000) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+  try {
+    const response = await fetch(url, { ...options, signal: controller.signal });
+    return response;
+  } finally {
+    clearTimeout(id);
+  }
+}
+
+// ============================================
 // NotebookLM API Client (inline)
 // ============================================
 
@@ -16,7 +31,7 @@ const NotebookLMAPI = {
         ? `${this.BASE_URL}/?authuser=${authuser}&pageId=none`
         : this.BASE_URL;
 
-      const response = await fetch(url, {
+      const response = await fetchWithTimeout(url, {
         credentials: 'include',
         redirect: 'manual'
       });
@@ -170,7 +185,7 @@ const NotebookLMAPI = {
       'at': this.tokens.at
     });
 
-    const response = await fetch(url.toString(), {
+    const response = await fetchWithTimeout(url.toString(), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'
@@ -189,7 +204,7 @@ const NotebookLMAPI = {
   // Get list of Google accounts (filter out YouTube channels/profiles)
   async listAccounts() {
     try {
-      const response = await fetch(
+      const response = await fetchWithTimeout(
         'https://accounts.google.com/ListAccounts?json=standard&source=ogb&md=1&cc=1&mn=1&mo=1&gpsia=1&fwput=860&listPages=1&origin=https%3A%2F%2Fwww.google.com',
         { credentials: 'include' }
       );
@@ -197,7 +212,7 @@ const NotebookLMAPI = {
       const text = await response.text();
 
       // Extract JSON from postMessage call
-      const match = text.match(/postMessage\('(.*)'\s*,\s*'https:/);
+      const match = text.match(/postMessage\('([^']*)'\s*,\s*'https:/);
       if (!match) return [];
 
       // Decode escaped characters

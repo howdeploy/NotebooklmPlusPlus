@@ -95,28 +95,32 @@ function detectYouTubePageType(url) {
     // Dedicated playlist page
     youtubePageType = 'playlist';
     const playlistText = t('popup_addPlaylist', 'Add Playlist to Notebook');
-    addBtn.innerHTML = `<span>📋</span> ${playlistText}`;
+    addBtn.textContent = '';
+    addBtn.append('📋 ', playlistText);
     const playlistLabel = t('popup_playlist', 'Playlist');
-    currentUrlDiv.innerHTML = `📋 <strong>${playlistLabel}:</strong> ${currentTab.title.replace(' - YouTube', '')}`;
+    currentUrlDiv.textContent = `📋 ${playlistLabel}: ${currentTab.title.replace(' - YouTube', '')}`;
   } else if (url.includes('/watch') && hasPlaylistParam) {
     // Watching a video from a playlist
     youtubePageType = 'playlist_video';
     const addAllText = t('popup_addAllPlaylist', 'Add All Playlist Videos');
-    addBtn.innerHTML = `<span>📋</span> ${addAllText}`;
+    addBtn.textContent = '';
+    addBtn.append('📋 ', addAllText);
     const videoFromPlaylist = t('popup_videoFromPlaylist', 'Video from Playlist');
     const clickToAdd = t('popup_clickToAddAll', 'Click to add all videos');
-    currentUrlDiv.innerHTML = `📋 <strong>${videoFromPlaylist}</strong> - ${clickToAdd}`;
+    currentUrlDiv.textContent = `📋 ${videoFromPlaylist} - ${clickToAdd}`;
   } else if (url.includes('/watch')) {
     // Single video
     youtubePageType = 'video';
     const addVideoText = t('popup_addVideo', 'Add Video to Notebook');
-    addBtn.innerHTML = `<span>➕</span> ${addVideoText}`;
+    addBtn.textContent = '';
+    addBtn.append('➕ ', addVideoText);
   } else if (url.includes('/@') || url.includes('/channel/') || url.includes('/c/')) {
     youtubePageType = 'channel';
     const addChannelText = t('popup_addChannelVideos', 'Add Channel Videos to Notebook');
-    addBtn.innerHTML = `<span>📺</span> ${addChannelText}`;
+    addBtn.textContent = '';
+    addBtn.append('📺 ', addChannelText);
     const channelLabel = t('popup_channel', 'Channel');
-    currentUrlDiv.innerHTML = `📺 <strong>${channelLabel}:</strong> ${currentTab.title.replace(' - YouTube', '')}`;
+    currentUrlDiv.textContent = `📺 ${channelLabel}: ${currentTab.title.replace(' - YouTube', '')}`;
   }
 }
 
@@ -131,7 +135,7 @@ async function loadAccounts() {
     const selectedAccount = storage.selectedAccount || 0;
 
     // Populate account selector
-    accountSelect.innerHTML = '';
+    accountSelect.textContent = '';
 
     if (accounts.length > 0) {
       accounts.forEach((acc, index) => {
@@ -166,7 +170,11 @@ async function loadNotebooks() {
     if (response.error) {
       showStatus('error', response.error);
       const loginText = t('popup_loginRequired', 'Login to NotebookLM first');
-      notebookSelect.innerHTML = `<option value="">${loginText}</option>`;
+      notebookSelect.textContent = '';
+      const loginOption = document.createElement('option');
+      loginOption.value = '';
+      loginOption.textContent = loginText;
+      notebookSelect.appendChild(loginOption);
       addBtn.disabled = true;
       return;
     }
@@ -179,11 +187,14 @@ async function loadNotebooks() {
     const lastNotebook = storage.lastNotebook;
 
     // Populate notebook selector
-    notebookSelect.innerHTML = '';
+    notebookSelect.textContent = '';
 
     if (notebooks.length === 0) {
       const noNotebooksText = t('popup_noNotebooks', 'No notebooks found');
-      notebookSelect.innerHTML = `<option value="">${noNotebooksText}</option>`;
+      const emptyOption = document.createElement('option');
+      emptyOption.value = '';
+      emptyOption.textContent = noNotebooksText;
+      notebookSelect.appendChild(emptyOption);
       addBtn.disabled = true;
     } else {
       const sourcesText = t('common_sources', 'sources');
@@ -384,19 +395,24 @@ function showSuccessWithActions(notebook, videoCount = null) {
   const openNotebookText = t('popup_openNotebook', 'Open Notebook');
 
   statusDiv.className = 'status success';
-  statusDiv.innerHTML = `
-    <div>✓ ${addedToText} "${notebook.emoji} ${notebook.name}"</div>
-    <div class="success-actions">
-      <button class="btn btn-secondary" id="open-notebook-btn">
-        ${openNotebookText}
-      </button>
-    </div>
-  `;
+  statusDiv.textContent = '';
 
-  // Add click listener (CSP doesn't allow inline onclick)
-  document.getElementById('open-notebook-btn').addEventListener('click', () => {
+  const messageDiv = document.createElement('div');
+  messageDiv.textContent = `✓ ${addedToText} "${notebook.emoji} ${notebook.name}"`;
+
+  const actionsDiv = document.createElement('div');
+  actionsDiv.className = 'success-actions';
+
+  const openBtn = document.createElement('button');
+  openBtn.className = 'btn btn-secondary';
+  openBtn.textContent = openNotebookText;
+  openBtn.addEventListener('click', () => {
     chrome.tabs.create({ url: notebookUrl });
   });
+
+  actionsDiv.appendChild(openBtn);
+  statusDiv.appendChild(messageDiv);
+  statusDiv.appendChild(actionsDiv);
 }
 
 // Show new notebook modal
@@ -523,8 +539,12 @@ function openTabsImport() {
 function showStatus(type, message) {
   statusDiv.className = `status ${type}`;
 
+  statusDiv.textContent = '';
   if (type === 'loading') {
-    statusDiv.innerHTML = `<div class="spinner"></div>${message}`;
+    const spinner = document.createElement('div');
+    spinner.className = 'spinner';
+    statusDiv.appendChild(spinner);
+    statusDiv.appendChild(document.createTextNode(message));
   } else {
     statusDiv.textContent = message;
   }
