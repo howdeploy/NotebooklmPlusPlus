@@ -17,8 +17,7 @@
   "host_permissions": [
     "https://notebooklm.google.com/*",
     "https://www.youtube.com/*",
-    "https://accounts.google.com/*",
-    "https://www.googleapis.com/*"
+    "https://accounts.google.com/*"
   ],
 
   "content_security_policy": {

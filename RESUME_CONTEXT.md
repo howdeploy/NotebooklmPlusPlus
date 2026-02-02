@@ -15,7 +15,7 @@
    - `_fetchCommentPage(continuation, ytConfig)` — executes fetch in YouTube tab context (not service worker!) via `chrome.scripting.executeScript` with `world: 'MAIN'`, because service worker gets 403 (wrong origin)
    - `_parseInnerTubeResponse()` — parses `onResponseReceivedEndpoints` structure
    - `_findCommentsContinuation()` — uses "Newest first" sort (index 1 in `sortFilterSubMenuRenderer`) to avoid ~1000 limit of "Top comments" sort
-   - Kept `extractVideoId`, `validateApiKey`, `getVideoMetadata` unchanged (still use Data API v3 + API key)
+   - `extractVideoId` kept (URL parsing only). `validateApiKey` and `getVideoMetadata` removed — metadata now extracted from DOM via `getVideoMetadataFromDOM(tabId)`
 
 2. **`background.js`** — Added `tabId` parameter to `parse-comments` command and `doParseComments()` function
 
@@ -87,16 +87,20 @@ Previous debug lines (`viewModel keys`, `threadWithViewModel`) did NOT appear in
 | `_locales/ru/messages.json` | Same |
 
 ### What Still Works (unchanged)
-- `extractVideoId()`, `validateApiKey()`, `getVideoMetadata()` — still use Data API v3
+- `extractVideoId()` — URL parsing, no API needed
 - `CommentsToMd.format()` — unchanged, handles both ISO dates and relative dates
-- Settings UI for API key — still needed for metadata
 - All other extension features (add source, notebooks, playlists, etc.)
 
+### What Was Removed
+- `validateApiKey()` and `getVideoMetadata()` — replaced by DOM-based metadata extraction (`getVideoMetadataFromDOM`)
+- YouTube Data API v3 dependency — no longer needed, no API key required
+- Settings UI for API key — replaced with comments mode/limit/replies settings
+
 ## User's Setup
-- YouTube API key configured and validated (working)
 - NotebookLM account working (add video and text sources work)
 - Russian locale active
 - Sending comments to NotebookLM works (1228 comments successfully added as text source)
+- No YouTube API key needed — comments fetched via InnerTube API
 
 ## To Continue
 1. Check debug logs from service worker to see reply structure

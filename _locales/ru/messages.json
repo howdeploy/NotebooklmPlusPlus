@@ -7,10 +7,6 @@
     "message": "Импортируйте YouTube видео и веб-страницы в NotebookLM одним кликом. Массовый импорт, поддержка плейлистов и многое другое.",
     "description": "Описание расширения"
   },
-  "popup_title": {
-    "message": "Add to NotebookLM",
-    "description": "Заголовок popup"
-  },
   "popup_currentPage": {
     "message": "Текущая страница:",
     "description": "Метка текущей страницы"
@@ -163,16 +159,6 @@
     "message": "Введите URL (по одному на строку):",
     "description": "Метка поля ввода URL"
   },
-  "bulk_linksDetected": {
-    "message": "Обнаружено ссылок: $COUNT$",
-    "description": "Счётчик ссылок",
-    "placeholders": {
-      "count": {
-        "content": "$1",
-        "example": "5"
-      }
-    }
-  },
   "bulk_importLinks": {
     "message": "Импортировать ссылки",
     "description": "Кнопка импорта ссылок"
@@ -185,43 +171,9 @@
     "message": "Выбрать все",
     "description": "Чекбокс выбора всех"
   },
-  "bulk_tabsSelected": {
-    "message": "Выбрано вкладок: $COUNT$",
-    "description": "Счётчик вкладок",
-    "placeholders": {
-      "count": {
-        "content": "$1",
-        "example": "3"
-      }
-    }
-  },
   "bulk_importTabs": {
     "message": "Импортировать выбранные вкладки",
     "description": "Кнопка импорта вкладок"
-  },
-  "bulk_importing": {
-    "message": "Импорт $CURRENT$ из $TOTAL$...",
-    "description": "Прогресс импорта",
-    "placeholders": {
-      "current": {
-        "content": "$1",
-        "example": "5"
-      },
-      "total": {
-        "content": "$2",
-        "example": "10"
-      }
-    }
-  },
-  "bulk_success": {
-    "message": "Успешно импортировано элементов: $COUNT$!",
-    "description": "Сообщение об успехе",
-    "placeholders": {
-      "count": {
-        "content": "$1",
-        "example": "10"
-      }
-    }
   },
   "bulk_openNotebook": {
     "message": "Открыть ноутбук",
@@ -291,101 +243,17 @@
     "message": "Аккаунт изменён. Ноутбуки перезагружены.",
     "description": "Сообщение об изменении аккаунта"
   },
-  "youtube_addButton": {
-    "message": "В NotebookLM",
-    "description": "Кнопка добавления на YouTube"
-  },
-  "youtube_addPlaylist": {
-    "message": "Добавить плейлист в NotebookLM",
-    "description": "Кнопка добавления плейлиста"
-  },
-  "youtube_addChannel": {
-    "message": "Добавить видео в NotebookLM",
-    "description": "Кнопка добавления видео канала"
-  },
-  "contextMenu_sendTo": {
-    "message": "Отправить в NotebookLM",
-    "description": "Пункт контекстного меню"
-  },
   "common_sources": {
     "message": "источников",
     "description": "Метка источников"
-  },
-  "common_link": {
-    "message": "ссылка",
-    "description": "Ссылка единственное число"
   },
   "common_links": {
     "message": "ссылок",
     "description": "Ссылки множественное число"
   },
-  "common_tab": {
-    "message": "вкладка",
-    "description": "Вкладка единственное число"
-  },
   "common_tabs": {
     "message": "вкладок",
     "description": "Вкладки множественное число"
-  },
-  "common_video": {
-    "message": "видео",
-    "description": "Видео единственное число"
-  },
-  "common_videos": {
-    "message": "видео",
-    "description": "Видео множественное число"
-  },
-  "common_item": {
-    "message": "элемент",
-    "description": "Элемент единственное число"
-  },
-  "common_items": {
-    "message": "элементов",
-    "description": "Элементы множественное число"
-  },
-  "bulk_sourcesTab": {
-    "message": "Управление источниками",
-    "description": "Вкладка управления источниками"
-  },
-  "sources_title": {
-    "message": "Управление источниками",
-    "description": "Заголовок управления источниками"
-  },
-  "sources_selectNotebook": {
-    "message": "Выберите ноутбук для управления:",
-    "description": "Метка выбора ноутбука"
-  },
-  "sources_loadSources": {
-    "message": "Загрузить источники",
-    "description": "Кнопка загрузки источников"
-  },
-  "sources_selectNotebookFirst": {
-    "message": "Выберите ноутбук и нажмите \"Загрузить источники\"",
-    "description": "Текст-подсказка"
-  },
-  "sources_noSources": {
-    "message": "В этом ноутбуке нет источников",
-    "description": "Сообщение об отсутствии источников"
-  },
-  "sources_deleteSelected": {
-    "message": "Удалить выбранные источники",
-    "description": "Кнопка удаления"
-  },
-  "sources_confirmDelete": {
-    "message": "Вы уверены, что хотите удалить ${count} источник(ов)? Это действие нельзя отменить.",
-    "description": "Подтверждение удаления"
-  },
-  "sources_deleting": {
-    "message": "Удаление...",
-    "description": "Сообщение о процессе удаления"
-  },
-  "sources_deletedSuccess": {
-    "message": "Успешно удалено источников: ${count}!",
-    "description": "Сообщение об успешном удалении"
-  },
-  "sources_deleteFailed": {
-    "message": "Не удалось удалить источники",
-    "description": "Сообщение об ошибке удаления"
   },
   "settings_enableBulkDelete": {
     "message": "Включить кнопку массового удаления в NotebookLM",
@@ -471,16 +339,12 @@
     "message": "Не удалось определить ID видео на этой странице",
     "description": "Не YouTube-страница с видео"
   },
-  "comments_parsingInProgress": {
-    "message": "Парсинг уже выполняется",
-    "description": "Сообщение о выполняющемся парсинге"
-  },
   "comments_commentsParsed": {
     "message": "комментариев добавлено в",
     "description": "Комментарии спаршены и добавлены в ноутбук"
   },
-  "comments_configExtractFailed": {
-    "message": "Не удалось прочитать данные страницы YouTube. Убедитесь, что вы на странице видео.",
-    "description": "Ошибка при извлечении конфигурации YouTube"
+  "comments_invalidRequest": {
+    "message": "Неверный запрос",
+    "description": "Ошибка неверного запроса"
   }
 }

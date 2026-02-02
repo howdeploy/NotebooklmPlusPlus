@@ -7,10 +7,6 @@
     "message": "Import YouTube videos and web pages to NotebookLM with one click. Bulk import, playlist support, and more.",
     "description": "Extension description"
   },
-  "popup_title": {
-    "message": "Add to NotebookLM",
-    "description": "Popup title"
-  },
   "popup_currentPage": {
     "message": "Current page:",
     "description": "Current page label"
@@ -163,16 +159,6 @@
     "message": "Enter URLs (one per line):",
     "description": "URL input label"
   },
-  "bulk_linksDetected": {
-    "message": "$COUNT$ links detected",
-    "description": "Links count",
-    "placeholders": {
-      "count": {
-        "content": "$1",
-        "example": "5"
-      }
-    }
-  },
   "bulk_importLinks": {
     "message": "Import Links",
     "description": "Import links button"
@@ -185,43 +171,9 @@
     "message": "Select All",
     "description": "Select all checkbox"
   },
-  "bulk_tabsSelected": {
-    "message": "$COUNT$ tabs selected",
-    "description": "Tabs count",
-    "placeholders": {
-      "count": {
-        "content": "$1",
-        "example": "3"
-      }
-    }
-  },
   "bulk_importTabs": {
     "message": "Import Selected Tabs",
     "description": "Import tabs button"
-  },
-  "bulk_importing": {
-    "message": "Importing $CURRENT$ of $TOTAL$...",
-    "description": "Import progress",
-    "placeholders": {
-      "current": {
-        "content": "$1",
-        "example": "5"
-      },
-      "total": {
-        "content": "$2",
-        "example": "10"
-      }
-    }
-  },
-  "bulk_success": {
-    "message": "Successfully imported $COUNT$ items!",
-    "description": "Success message",
-    "placeholders": {
-      "count": {
-        "content": "$1",
-        "example": "10"
-      }
-    }
   },
   "bulk_openNotebook": {
     "message": "Open notebook",
@@ -291,101 +243,17 @@
     "message": "Account changed. Notebooks reloaded.",
     "description": "Account changed message"
   },
-  "youtube_addButton": {
-    "message": "Add to NotebookLM",
-    "description": "YouTube add button"
-  },
-  "youtube_addPlaylist": {
-    "message": "Add Playlist to NotebookLM",
-    "description": "YouTube add playlist button"
-  },
-  "youtube_addChannel": {
-    "message": "Add Videos to NotebookLM",
-    "description": "YouTube add channel videos button"
-  },
-  "contextMenu_sendTo": {
-    "message": "Send to NotebookLM",
-    "description": "Context menu item"
-  },
   "common_sources": {
     "message": "sources",
     "description": "Sources label"
-  },
-  "common_link": {
-    "message": "link",
-    "description": "Link singular"
   },
   "common_links": {
     "message": "links",
     "description": "Links plural"
   },
-  "common_tab": {
-    "message": "tab",
-    "description": "Tab singular"
-  },
   "common_tabs": {
     "message": "tabs",
     "description": "Tabs plural"
-  },
-  "common_video": {
-    "message": "video",
-    "description": "Video singular"
-  },
-  "common_videos": {
-    "message": "videos",
-    "description": "Videos plural"
-  },
-  "common_item": {
-    "message": "item",
-    "description": "Item singular"
-  },
-  "common_items": {
-    "message": "items",
-    "description": "Items plural"
-  },
-  "bulk_sourcesTab": {
-    "message": "Manage Sources",
-    "description": "Sources management tab"
-  },
-  "sources_title": {
-    "message": "Manage Sources",
-    "description": "Sources management title"
-  },
-  "sources_selectNotebook": {
-    "message": "Select notebook to manage:",
-    "description": "Sources notebook selection label"
-  },
-  "sources_loadSources": {
-    "message": "Load Sources",
-    "description": "Load sources button"
-  },
-  "sources_selectNotebookFirst": {
-    "message": "Select a notebook and click \"Load Sources\"",
-    "description": "Sources placeholder text"
-  },
-  "sources_noSources": {
-    "message": "No sources in this notebook",
-    "description": "No sources message"
-  },
-  "sources_deleteSelected": {
-    "message": "Delete Selected Sources",
-    "description": "Delete sources button"
-  },
-  "sources_confirmDelete": {
-    "message": "Are you sure you want to delete ${count} source(s)? This cannot be undone.",
-    "description": "Delete confirmation message"
-  },
-  "sources_deleting": {
-    "message": "Deleting...",
-    "description": "Deleting progress message"
-  },
-  "sources_deletedSuccess": {
-    "message": "Successfully deleted ${count} source(s)!",
-    "description": "Delete success message"
-  },
-  "sources_deleteFailed": {
-    "message": "Failed to delete sources",
-    "description": "Delete failed message"
   },
   "settings_enableBulkDelete": {
     "message": "Enable bulk delete button in NotebookLM",
@@ -471,16 +339,12 @@
     "message": "Cannot detect video ID from this page",
     "description": "Not a YouTube video page"
   },
-  "comments_parsingInProgress": {
-    "message": "Parsing already in progress",
-    "description": "Parsing in progress message"
-  },
   "comments_commentsParsed": {
     "message": "comments added to",
     "description": "Comments parsed and added to notebook"
   },
-  "comments_configExtractFailed": {
-    "message": "Could not read YouTube page data. Make sure you are on a video page.",
-    "description": "Error when ytcfg extraction fails"
+  "comments_invalidRequest": {
+    "message": "Invalid request",
+    "description": "Invalid request error"
   }
 }

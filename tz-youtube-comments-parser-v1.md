@@ -1,5 +1,7 @@
 # ТЗ: Парсинг комментариев YouTube → NotebookLM (v1)
 
+> **⚠️ УСТАРЕЛО:** Это ТЗ описывает первоначальный дизайн на базе YouTube Data API v3 + API-ключ. Реализация была переведена на InnerTube API — API-ключ больше не нужен, метаданные извлекаются из DOM. Актуальное описание архитектуры — в `RESUME_CONTEXT.md`.
+
 ## Обзор
 
 Новая фича для Chrome-расширения **Add to NotebookLM** (`github.com/AndyShaman/add_to_NotebookLM`).
