@@ -403,6 +403,14 @@
     "message": "Загрузка комментариев...",
     "description": "Прогресс загрузки комментариев"
   },
+  "comments_loadingReplies": {
+    "message": "Загрузка ответов...",
+    "description": "Прогресс загрузки ответов"
+  },
+  "comments_commentsLoaded": {
+    "message": "комментариев",
+    "description": "Метка комментариев в фазе загрузки ответов"
+  },
   "comments_formatting": {
     "message": "Форматирование...",
     "description": "Прогресс форматирования"
@@ -415,41 +423,33 @@
     "message": "Комментарии отключены для этого видео",
     "description": "Ошибка: комментарии отключены"
   },
-  "comments_apiKeyMissing": {
-    "message": "Сначала укажите YouTube API ключ в Настройках",
-    "description": "Подсказка об отсутствии API ключа"
+  "comments_modeLabel": {
+    "message": "Режим парсинга комментариев:",
+    "description": "Метка режима комментариев"
   },
-  "comments_apiKeyInvalid": {
-    "message": "Недействительный YouTube API ключ",
-    "description": "Ошибка: недействительный ключ"
+  "comments_modeTop": {
+    "message": "Топ комментарии (~1000 популярных)",
+    "description": "Режим топ комментариев"
   },
-  "comments_apiQuotaExceeded": {
-    "message": "Квота YouTube API исчерпана. Попробуйте завтра.",
-    "description": "Ошибка: квота исчерпана"
+  "comments_modeNewest": {
+    "message": "Все (сначала новые)",
+    "description": "Режим новых комментариев"
   },
-  "comments_apiKeyLabel": {
-    "message": "YouTube API ключ (для парсинга комментариев):",
-    "description": "Метка поля API ключа"
+  "comments_limitLabel": {
+    "message": "Лимит комментариев:",
+    "description": "Метка лимита комментариев"
   },
-  "comments_apiKeyPlaceholder": {
-    "message": "AIza...",
-    "description": "Placeholder поля API ключа"
+  "comments_limitUnlimited": {
+    "message": "Без лимита ⚠️",
+    "description": "Вариант без лимита"
   },
-  "comments_apiKeySave": {
-    "message": "Сохранить",
-    "description": "Кнопка сохранения API ключа"
+  "comments_includeReplies": {
+    "message": "Загружать ответы",
+    "description": "Чекбокс загрузки ответов"
   },
-  "comments_apiKeyValid": {
-    "message": "Ключ действителен",
-    "description": "Статус: ключ действителен"
-  },
-  "comments_apiKeyValidating": {
-    "message": "Проверка...",
-    "description": "Статус: проверка ключа"
-  },
-  "comments_apiKeyHowTo": {
-    "message": "Как получить ключ? → Google Cloud Console",
-    "description": "Ссылка на помощь по API ключу"
+  "comments_includeRepliesHint": {
+    "message": "Загружать ветки ответов к комментариям",
+    "description": "Подсказка загрузки ответов"
   },
   "comments_cancelParsing": {
     "message": "Отмена",
@@ -474,5 +474,13 @@
   "comments_parsingInProgress": {
     "message": "Парсинг уже выполняется",
     "description": "Сообщение о выполняющемся парсинге"
+  },
+  "comments_commentsParsed": {
+    "message": "комментариев добавлено в",
+    "description": "Комментарии спаршены и добавлены в ноутбук"
+  },
+  "comments_configExtractFailed": {
+    "message": "Не удалось прочитать данные страницы YouTube. Убедитесь, что вы на странице видео.",
+    "description": "Ошибка при извлечении конфигурации YouTube"
   }
 }

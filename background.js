@@ -141,8 +141,8 @@ const NotebookLMAPI = {
 
   // Add text content as source
   async addTextSource(notebookId, text, title = 'Imported content') {
-    const source = [[text, title]];
-    const response = await this.rpc('izAoDd', [source, notebookId], `/notebook/${notebookId}`);
+    const source = [[null, [title, text], null, null, null, null, null, null]];
+    const response = await this.rpc('izAoDd', [source, notebookId, [2], null, null], `/notebook/${notebookId}`);
     return response;
   },
 
@@ -365,6 +365,9 @@ chrome.runtime.onInstalled.addListener((details) => {
     });
   }
 
+  // Clean up old API key setting (no longer needed)
+  chrome.storage.local.remove('youtubeApiKey');
+
   // Setup context menus
   chrome.contextMenus.removeAll(() => {
     chrome.contextMenus.create({
@@ -398,7 +401,7 @@ async function handleMessage(request, sender) {
   currentAuthuser = storage.selectedAccount || storage.selected_account || 0;
 
   // Commands that don't require tokens
-  const noTokenCommands = ['list-accounts', 'ping', 'get-current-tab', 'get-all-tabs', 'validate-api-key', 'get-parse-status', 'cancel-parse'];
+  const noTokenCommands = ['list-accounts', 'ping', 'get-current-tab', 'get-all-tabs', 'get-parse-status', 'cancel-parse'];
 
   // Ensure we have tokens for API calls
   if (!noTokenCommands.includes(cmd)) {
@@ -459,9 +462,6 @@ async function handleMessage(request, sender) {
     case 'delete-sources':
       return await deleteSources(params.notebookId, params.sourceIds);
 
-    case 'validate-api-key':
-      return await YouTubeCommentsAPI.validateApiKey(params.apiKey);
-
     case 'get-parse-status':
       return {
         active: parseState.active,
@@ -483,7 +483,7 @@ async function handleMessage(request, sender) {
       if (parseState.active) {
         return { error: 'Parse already in progress' };
       }
-      doParseComments(params.notebookId, params.videoId, params.apiKey);
+      doParseComments(params.notebookId, params.videoId, params.tabId);
       return { started: true };
 
     default:
@@ -732,7 +732,7 @@ async function saveToNotebookLMOriginal(title, urls, currentURL, notebookID) {
 }
 
 // Fire-and-forget: fetch comments, format, send to NotebookLM
-async function doParseComments(notebookId, videoId, apiKey) {
+async function doParseComments(notebookId, videoId, tabId) {
   const cancelToken = { cancelled: false };
   parseState = {
     active: true,
@@ -744,18 +744,33 @@ async function doParseComments(notebookId, videoId, apiKey) {
   };
 
   try {
-    // Phase 1: Fetch metadata
-    const metadata = await YouTubeCommentsAPI.getVideoMetadata(videoId, apiKey);
+    // Phase 1: Fetch metadata from DOM (no API key needed)
+    const metadata = await YouTubeCommentsAPI.getVideoMetadataFromDOM(tabId);
     parseState.progress.total = metadata.commentCount;
 
     if (cancelToken.cancelled) return;
 
-    // Phase 2: Fetch all comments
-    const comments = await YouTubeCommentsAPI.fetchAllComments(videoId, apiKey, {
-      progressCallback: ({ fetched }) => {
+    // Load comments settings
+    const settings = await chrome.storage.local.get(['commentsMode', 'commentsLimit', 'commentsIncludeReplies']);
+    const mode = settings.commentsMode || 'top';
+    const includeReplies = settings.commentsIncludeReplies !== undefined ? settings.commentsIncludeReplies : (mode === 'top');
+    // For 'top' mode: maxComments=0 (YouTube limits naturally to ~1000)
+    // For 'newest' mode: use configured limit
+    const maxComments = mode === 'top' ? 0 : (settings.commentsLimit || 1000);
+
+    // Phase 2: Fetch comments via InnerTube API
+    const comments = await YouTubeCommentsAPI.fetchAllComments(videoId, {
+      progressCallback: ({ fetched, phase }) => {
         parseState.progress.fetched = fetched;
+        if (phase === 'fetching_replies') {
+          parseState.progress.phase = 'fetching_replies';
+        }
       },
-      cancelToken
+      cancelToken,
+      tabId,
+      mode,
+      maxComments,
+      includeReplies
     });
 
     if (cancelToken.cancelled) return;
@@ -781,6 +796,7 @@ async function doParseComments(notebookId, videoId, apiKey) {
     parseState.progress.phase = 'done';
     parseState.result = {
       commentCount: comments.length,
+      totalComments: metadata.commentCount,
       partCount: parts.length,
       videoTitle: metadata.title
     };

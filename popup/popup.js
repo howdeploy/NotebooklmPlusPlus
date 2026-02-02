@@ -406,9 +406,8 @@ function extractYouTubeUrls(pageType) {
 }
 
 // Show success message with action buttons
-function showSuccessWithActions(notebook, videoCount = null) {
+function showSuccessWithActions(notebook, videoCount = null, commentCount = null, videoTitle = null, totalComments = 0) {
   const notebookUrl = `https://notebooklm.google.com/notebook/${notebook.id}`;
-  const countText = videoCount ? `${videoCount} ${t('common_videos', 'videos')}` : t('common_item', 'page');
   const addedToText = t('popup_addedTo', 'Added to');
   const openNotebookText = t('popup_openNotebook', 'Open Notebook');
 
@@ -416,7 +415,14 @@ function showSuccessWithActions(notebook, videoCount = null) {
   statusDiv.textContent = '';
 
   const messageDiv = document.createElement('div');
-  messageDiv.textContent = `✓ ${addedToText} "${notebook.emoji} ${notebook.name}"`;
+  if (commentCount) {
+    messageDiv.textContent = `✓ ${commentCount} ${t('comments_commentsParsed', 'comments added to')} "${notebook.emoji} ${notebook.name}"`;
+  } else {
+    messageDiv.textContent = `✓ ${addedToText} "${notebook.emoji} ${notebook.name}"`;
+  }
+
+  statusDiv.appendChild(messageDiv);
+
 
   const actionsDiv = document.createElement('div');
   actionsDiv.className = 'success-actions';
@@ -429,7 +435,6 @@ function showSuccessWithActions(notebook, videoCount = null) {
   });
 
   actionsDiv.appendChild(openBtn);
-  statusDiv.appendChild(messageDiv);
   statusDiv.appendChild(actionsDiv);
 }
 
@@ -585,17 +590,11 @@ function openSettings() {
   });
 }
 
-// Update parse comments button state based on API key availability
+// Update parse comments button state
 async function updateParseButtonState() {
   parseCommentsBtn.classList.remove('hidden');
-  const storage = await chrome.storage.local.get(['youtubeApiKey']);
-  if (!storage.youtubeApiKey) {
-    parseCommentsBtn.disabled = true;
-    parseCommentsBtn.title = t('comments_apiKeyMissing', 'Set YouTube API key in Settings first');
-  } else {
-    parseCommentsBtn.disabled = !notebookSelect.value;
-    parseCommentsBtn.title = '';
-  }
+  parseCommentsBtn.disabled = !notebookSelect.value;
+  parseCommentsBtn.title = '';
 }
 
 // Extract video ID from URL
@@ -625,12 +624,6 @@ async function handleParseComments() {
     return;
   }
 
-  const storage = await chrome.storage.local.get(['youtubeApiKey']);
-  if (!storage.youtubeApiKey) {
-    showStatus('error', t('comments_apiKeyMissing', 'Set YouTube API key in Settings first'));
-    return;
-  }
-
   // Start parse
   parseCommentsBtn.classList.add('hidden');
   parseProgress.classList.remove('hidden');
@@ -640,7 +633,7 @@ async function handleParseComments() {
     cmd: 'parse-comments',
     notebookId,
     videoId,
-    apiKey: storage.youtubeApiKey
+    tabId: currentTab.id
   });
 
   if (response.error) {
@@ -679,6 +672,9 @@ function updateParseUI(status) {
     const total = status.progress.total;
     const totalStr = total ? ` / ~${total}` : '';
     parseProgressText.textContent = `${t('comments_loadingComments', 'Loading comments...')} (${fetched}${totalStr})`;
+  } else if (phase === 'fetching_replies') {
+    const fetched = status.progress.fetched || 0;
+    parseProgressText.textContent = `${t('comments_loadingReplies', 'Loading replies...')} (${fetched} ${t('comments_commentsLoaded', 'comments')})`;
   } else if (phase === 'formatting') {
     parseProgressText.textContent = t('comments_formatting', 'Formatting...');
   } else if (phase === 'sending') {
@@ -686,11 +682,17 @@ function updateParseUI(status) {
   } else if (phase === 'done') {
     stopProgressPolling();
     parseProgress.classList.add('hidden');
-    const count = status.result?.commentCount || 0;
-    const parts = status.result?.partCount || 1;
-    const partsInfo = parts > 1 ? ` (${parts} parts)` : '';
-    showStatus('success', `✓ ${count} comments parsed${partsInfo}`);
     parseCommentsBtn.classList.remove('hidden');
+    const count = status.result?.commentCount || 0;
+    const totalComments = status.result?.totalComments || 0;
+    const videoTitle = status.result?.videoTitle || '';
+    const notebookId = notebookSelect.value;
+    const notebook = notebooks.find(n => n.id === notebookId);
+    if (notebook) {
+      showSuccessWithActions(notebook, null, count, videoTitle, totalComments);
+    } else {
+      showStatus('success', `✓ ${count} comments parsed`);
+    }
   } else if (phase === 'error') {
     stopProgressPolling();
     parseProgress.classList.add('hidden');
@@ -707,10 +709,9 @@ function updateParseUI(status) {
 // Map error codes to user-friendly messages
 function mapParseError(code, message) {
   const map = {
-    QUOTA_EXCEEDED: t('comments_apiQuotaExceeded', 'YouTube API quota exceeded. Try again tomorrow.'),
     COMMENTS_DISABLED: t('comments_commentsDisabled', 'Comments are disabled for this video'),
     VIDEO_NOT_FOUND: t('comments_videoNotFound', 'Video not found'),
-    INVALID_REQUEST: t('comments_apiKeyInvalid', 'Invalid API key or request'),
+    INVALID_REQUEST: t('comments_invalidRequest', 'Invalid request'),
     NETWORK_ERROR: t('comments_networkError', 'Network error. Check your connection.')
   };
   return map[code] || message || t('popup_error', 'Error');

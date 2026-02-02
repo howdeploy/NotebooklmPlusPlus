@@ -547,15 +547,29 @@ https://notion.so/page
       </div>
 
       <div class="form-group" style="margin-top: 16px;">
-        <label class="form-label" data-i18n="comments_apiKeyLabel">YouTube API Key (for comments parsing):</label>
-        <div style="display: flex; gap: 8px; align-items: center;">
-          <input type="password" id="youtube-api-key" class="form-select" style="flex: 1;" data-i18n-placeholder="comments_apiKeyPlaceholder" placeholder="AIza...">
-          <button id="save-api-key-btn" class="btn btn-primary" style="white-space: nowrap;" data-i18n="comments_apiKeySave">Save</button>
-        </div>
-        <div id="api-key-status" class="link-count" style="margin-top: 4px;"></div>
-        <div class="link-count" style="margin-top: 4px;">
-          <a href="https://console.cloud.google.com/apis/credentials" target="_blank" data-i18n="comments_apiKeyHowTo">How to get a key? → Google Cloud Console</a>
-        </div>
+        <label class="form-label" data-i18n="comments_modeLabel">Comments parsing mode:</label>
+        <select id="comments-mode" class="form-select">
+          <option value="top" data-i18n="comments_modeTop">Top comments (~1000 most popular)</option>
+          <option value="newest" data-i18n="comments_modeNewest">All (newest first)</option>
+        </select>
+      </div>
+
+      <div class="form-group" id="comments-limit-group" style="margin-top: 8px; display: none;">
+        <label class="form-label" data-i18n="comments_limitLabel">Comment limit:</label>
+        <select id="comments-limit" class="form-select">
+          <option value="1000">1000</option>
+          <option value="2000">2000</option>
+          <option value="5000">5000</option>
+          <option value="0" data-i18n="comments_limitUnlimited">Unlimited ⚠️</option>
+        </select>
+      </div>
+
+      <div class="form-group" style="margin-top: 8px;">
+        <label class="form-label">
+          <input type="checkbox" id="comments-include-replies" style="width: 18px; height: 18px; margin-right: 8px;" checked>
+          <span data-i18n="comments_includeReplies">Load replies</span>
+        </label>
+        <div class="link-count" data-i18n="comments_includeRepliesHint">Fetch reply threads for each comment</div>
       </div>
 
       <div class="form-group" style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #e0e0e0;">

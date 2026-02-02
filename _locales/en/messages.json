@@ -403,6 +403,14 @@
     "message": "Loading comments...",
     "description": "Loading comments progress"
   },
+  "comments_loadingReplies": {
+    "message": "Loading replies...",
+    "description": "Loading replies progress"
+  },
+  "comments_commentsLoaded": {
+    "message": "comments",
+    "description": "Comments label in replies loading phase"
+  },
   "comments_formatting": {
     "message": "Formatting...",
     "description": "Formatting comments progress"
@@ -415,41 +423,33 @@
     "message": "Comments are disabled for this video",
     "description": "Comments disabled error"
   },
-  "comments_apiKeyMissing": {
-    "message": "Set YouTube API key in Settings first",
-    "description": "API key missing hint"
+  "comments_modeLabel": {
+    "message": "Comments parsing mode:",
+    "description": "Comments mode label"
   },
-  "comments_apiKeyInvalid": {
-    "message": "Invalid YouTube API key",
-    "description": "API key invalid error"
+  "comments_modeTop": {
+    "message": "Top comments (~1000 most popular)",
+    "description": "Top comments mode option"
   },
-  "comments_apiQuotaExceeded": {
-    "message": "YouTube API quota exceeded. Try again tomorrow.",
-    "description": "API quota exceeded error"
+  "comments_modeNewest": {
+    "message": "All (newest first)",
+    "description": "Newest comments mode option"
   },
-  "comments_apiKeyLabel": {
-    "message": "YouTube API Key (for comments parsing):",
-    "description": "API key input label"
+  "comments_limitLabel": {
+    "message": "Comment limit:",
+    "description": "Comment limit label"
   },
-  "comments_apiKeyPlaceholder": {
-    "message": "AIza...",
-    "description": "API key input placeholder"
+  "comments_limitUnlimited": {
+    "message": "Unlimited ⚠️",
+    "description": "Unlimited option"
   },
-  "comments_apiKeySave": {
-    "message": "Save",
-    "description": "Save API key button"
+  "comments_includeReplies": {
+    "message": "Load replies",
+    "description": "Include replies checkbox"
   },
-  "comments_apiKeyValid": {
-    "message": "Key valid",
-    "description": "API key valid status"
-  },
-  "comments_apiKeyValidating": {
-    "message": "Validating...",
-    "description": "API key validating status"
-  },
-  "comments_apiKeyHowTo": {
-    "message": "How to get a key? → Google Cloud Console",
-    "description": "API key help link"
+  "comments_includeRepliesHint": {
+    "message": "Fetch reply threads for each comment",
+    "description": "Include replies hint"
   },
   "comments_cancelParsing": {
     "message": "Cancel",
@@ -474,5 +474,13 @@
   "comments_parsingInProgress": {
     "message": "Parsing already in progress",
     "description": "Parsing in progress message"
+  },
+  "comments_commentsParsed": {
+    "message": "comments added to",
+    "description": "Comments parsed and added to notebook"
+  },
+  "comments_configExtractFailed": {
+    "message": "Could not read YouTube page data. Make sure you are on a video page.",
+    "description": "Error when ytcfg extraction fails"
   }
 }
