@@ -394,5 +394,85 @@
   "settings_bulkDeleteHint": {
     "message": "Показывает кнопку удаления при выборе нескольких источников в NotebookLM",
     "description": "Подсказка настройки массового удаления"
+  },
+  "comments_parseComments": {
+    "message": "Спарсить комментарии",
+    "description": "Кнопка парсинга комментариев"
+  },
+  "comments_loadingComments": {
+    "message": "Загрузка комментариев...",
+    "description": "Прогресс загрузки комментариев"
+  },
+  "comments_formatting": {
+    "message": "Форматирование...",
+    "description": "Прогресс форматирования"
+  },
+  "comments_sending": {
+    "message": "Отправка в NotebookLM...",
+    "description": "Отправка комментариев в NotebookLM"
+  },
+  "comments_commentsDisabled": {
+    "message": "Комментарии отключены для этого видео",
+    "description": "Ошибка: комментарии отключены"
+  },
+  "comments_apiKeyMissing": {
+    "message": "Сначала укажите YouTube API ключ в Настройках",
+    "description": "Подсказка об отсутствии API ключа"
+  },
+  "comments_apiKeyInvalid": {
+    "message": "Недействительный YouTube API ключ",
+    "description": "Ошибка: недействительный ключ"
+  },
+  "comments_apiQuotaExceeded": {
+    "message": "Квота YouTube API исчерпана. Попробуйте завтра.",
+    "description": "Ошибка: квота исчерпана"
+  },
+  "comments_apiKeyLabel": {
+    "message": "YouTube API ключ (для парсинга комментариев):",
+    "description": "Метка поля API ключа"
+  },
+  "comments_apiKeyPlaceholder": {
+    "message": "AIza...",
+    "description": "Placeholder поля API ключа"
+  },
+  "comments_apiKeySave": {
+    "message": "Сохранить",
+    "description": "Кнопка сохранения API ключа"
+  },
+  "comments_apiKeyValid": {
+    "message": "Ключ действителен",
+    "description": "Статус: ключ действителен"
+  },
+  "comments_apiKeyValidating": {
+    "message": "Проверка...",
+    "description": "Статус: проверка ключа"
+  },
+  "comments_apiKeyHowTo": {
+    "message": "Как получить ключ? → Google Cloud Console",
+    "description": "Ссылка на помощь по API ключу"
+  },
+  "comments_cancelParsing": {
+    "message": "Отмена",
+    "description": "Кнопка отмены парсинга"
+  },
+  "comments_cancelled": {
+    "message": "Парсинг отменён",
+    "description": "Сообщение об отмене парсинга"
+  },
+  "comments_networkError": {
+    "message": "Ошибка сети. Проверьте подключение.",
+    "description": "Сообщение об ошибке сети"
+  },
+  "comments_videoNotFound": {
+    "message": "Видео не найдено",
+    "description": "Ошибка: видео не найдено"
+  },
+  "comments_notYoutubePage": {
+    "message": "Не удалось определить ID видео на этой странице",
+    "description": "Не YouTube-страница с видео"
+  },
+  "comments_parsingInProgress": {
+    "message": "Парсинг уже выполняется",
+    "description": "Сообщение о выполняющемся парсинге"
   }
 }

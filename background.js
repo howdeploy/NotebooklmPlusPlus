@@ -1,6 +1,8 @@
 // Background Service Worker for Add to NotebookLM
 // Handles API calls and message passing between content scripts and popup
 
+importScripts('lib/youtube-comments-api.js', 'lib/comments-to-md.js');
+
 // ============================================
 // Utilities
 // ============================================
@@ -342,6 +344,16 @@ const NotebookLMAPI = {
 // Store for current state
 let currentAuthuser = 0;
 
+// YouTube comments parse state
+let parseState = {
+  active: false,
+  videoId: null,
+  progress: { fetched: 0, total: null, phase: 'idle' },
+  cancelToken: null,
+  error: null,
+  result: null
+};
+
 // Initialize on install
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === 'install') {
@@ -386,7 +398,7 @@ async function handleMessage(request, sender) {
   currentAuthuser = storage.selectedAccount || storage.selected_account || 0;
 
   // Commands that don't require tokens
-  const noTokenCommands = ['list-accounts', 'ping', 'get-current-tab', 'get-all-tabs'];
+  const noTokenCommands = ['list-accounts', 'ping', 'get-current-tab', 'get-all-tabs', 'validate-api-key', 'get-parse-status', 'cancel-parse'];
 
   // Ensure we have tokens for API calls
   if (!noTokenCommands.includes(cmd)) {
@@ -446,6 +458,33 @@ async function handleMessage(request, sender) {
 
     case 'delete-sources':
       return await deleteSources(params.notebookId, params.sourceIds);
+
+    case 'validate-api-key':
+      return await YouTubeCommentsAPI.validateApiKey(params.apiKey);
+
+    case 'get-parse-status':
+      return {
+        active: parseState.active,
+        videoId: parseState.videoId,
+        progress: parseState.progress,
+        error: parseState.error,
+        result: parseState.result
+      };
+
+    case 'cancel-parse':
+      if (parseState.cancelToken) {
+        parseState.cancelToken.cancelled = true;
+        parseState.progress.phase = 'cancelled';
+        parseState.active = false;
+      }
+      return { success: true };
+
+    case 'parse-comments':
+      if (parseState.active) {
+        return { error: 'Parse already in progress' };
+      }
+      doParseComments(params.notebookId, params.videoId, params.apiKey);
+      return { started: true };
 
     default:
       console.log('Unknown command:', cmd);
@@ -689,6 +728,68 @@ async function saveToNotebookLMOriginal(title, urls, currentURL, notebookID) {
     };
   } catch (error) {
     return { err: error.message };
+  }
+}
+
+// Fire-and-forget: fetch comments, format, send to NotebookLM
+async function doParseComments(notebookId, videoId, apiKey) {
+  const cancelToken = { cancelled: false };
+  parseState = {
+    active: true,
+    videoId,
+    progress: { fetched: 0, total: null, phase: 'fetching' },
+    cancelToken,
+    error: null,
+    result: null
+  };
+
+  try {
+    // Phase 1: Fetch metadata
+    const metadata = await YouTubeCommentsAPI.getVideoMetadata(videoId, apiKey);
+    parseState.progress.total = metadata.commentCount;
+
+    if (cancelToken.cancelled) return;
+
+    // Phase 2: Fetch all comments
+    const comments = await YouTubeCommentsAPI.fetchAllComments(videoId, apiKey, {
+      progressCallback: ({ fetched }) => {
+        parseState.progress.fetched = fetched;
+      },
+      cancelToken
+    });
+
+    if (cancelToken.cancelled) return;
+
+    // Phase 3: Format to MD
+    parseState.progress.phase = 'formatting';
+    const storage = await chrome.storage.sync.get(['language']);
+    const lang = storage.language || 'en';
+    const parts = CommentsToMd.format(metadata, comments, { lang });
+
+    if (cancelToken.cancelled) return;
+
+    // Phase 4: Send to NotebookLM
+    parseState.progress.phase = 'sending';
+    // Refresh tokens before sending (parsing may have taken minutes)
+    await NotebookLMAPI.getTokens(currentAuthuser);
+    for (let i = 0; i < parts.length; i++) {
+      if (cancelToken.cancelled) return;
+      await NotebookLMAPI.addTextSource(notebookId, parts[i].text, parts[i].title);
+    }
+
+    // Done
+    parseState.progress.phase = 'done';
+    parseState.result = {
+      commentCount: comments.length,
+      partCount: parts.length,
+      videoTitle: metadata.title
+    };
+  } catch (e) {
+    console.error('doParseComments error:', e);
+    parseState.progress.phase = 'error';
+    parseState.error = { code: e.code || 'UNKNOWN', message: e.message };
+  } finally {
+    parseState.active = false;
   }
 }
 

@@ -394,5 +394,85 @@
   "settings_bulkDeleteHint": {
     "message": "Shows a delete button when you select multiple sources in NotebookLM",
     "description": "Bulk delete setting hint"
+  },
+  "comments_parseComments": {
+    "message": "Parse Comments",
+    "description": "Parse comments button"
+  },
+  "comments_loadingComments": {
+    "message": "Loading comments...",
+    "description": "Loading comments progress"
+  },
+  "comments_formatting": {
+    "message": "Formatting...",
+    "description": "Formatting comments progress"
+  },
+  "comments_sending": {
+    "message": "Sending to NotebookLM...",
+    "description": "Sending comments to NotebookLM"
+  },
+  "comments_commentsDisabled": {
+    "message": "Comments are disabled for this video",
+    "description": "Comments disabled error"
+  },
+  "comments_apiKeyMissing": {
+    "message": "Set YouTube API key in Settings first",
+    "description": "API key missing hint"
+  },
+  "comments_apiKeyInvalid": {
+    "message": "Invalid YouTube API key",
+    "description": "API key invalid error"
+  },
+  "comments_apiQuotaExceeded": {
+    "message": "YouTube API quota exceeded. Try again tomorrow.",
+    "description": "API quota exceeded error"
+  },
+  "comments_apiKeyLabel": {
+    "message": "YouTube API Key (for comments parsing):",
+    "description": "API key input label"
+  },
+  "comments_apiKeyPlaceholder": {
+    "message": "AIza...",
+    "description": "API key input placeholder"
+  },
+  "comments_apiKeySave": {
+    "message": "Save",
+    "description": "Save API key button"
+  },
+  "comments_apiKeyValid": {
+    "message": "Key valid",
+    "description": "API key valid status"
+  },
+  "comments_apiKeyValidating": {
+    "message": "Validating...",
+    "description": "API key validating status"
+  },
+  "comments_apiKeyHowTo": {
+    "message": "How to get a key? → Google Cloud Console",
+    "description": "API key help link"
+  },
+  "comments_cancelParsing": {
+    "message": "Cancel",
+    "description": "Cancel parsing button"
+  },
+  "comments_cancelled": {
+    "message": "Parsing cancelled",
+    "description": "Parsing cancelled message"
+  },
+  "comments_networkError": {
+    "message": "Network error. Check your connection.",
+    "description": "Network error message"
+  },
+  "comments_videoNotFound": {
+    "message": "Video not found",
+    "description": "Video not found error"
+  },
+  "comments_notYoutubePage": {
+    "message": "Cannot detect video ID from this page",
+    "description": "Not a YouTube video page"
+  },
+  "comments_parsingInProgress": {
+    "message": "Parsing already in progress",
+    "description": "Parsing in progress message"
   }
 }

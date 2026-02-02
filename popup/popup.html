@@ -360,6 +360,16 @@
     <span>➕</span> <span data-i18n="popup_addToNotebook">Add to Notebook</span>
   </button>
 
+  <button id="parse-comments-btn" class="btn btn-secondary hidden">
+    <span>💬</span> <span data-i18n="comments_parseComments">Parse Comments</span>
+  </button>
+
+  <div id="parse-progress" class="status loading hidden">
+    <div class="spinner"></div>
+    <span id="parse-progress-text"></span>
+    <button id="cancel-parse-btn" style="margin-left: auto; background: none; border: none; cursor: pointer; color: #c5221f; font-size: 13px; font-weight: 500;" data-i18n="comments_cancelParsing">Cancel</button>
+  </div>
+
   <button id="new-notebook-btn" class="btn btn-secondary">
     <span>📔</span> <span data-i18n="popup_createNotebook">Create New Notebook</span>
   </button>

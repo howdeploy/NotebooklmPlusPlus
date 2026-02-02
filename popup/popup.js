@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', init);
 let notebookSelect, addBtn, newNotebookBtn, bulkBtn, tabsBtn;
 let accountSelect, statusDiv, currentUrlDiv, settingsBtn, openNotebookBtn;
 let newNotebookModal, newNotebookInput, modalCancel, modalCreate;
+let parseCommentsBtn, parseProgress, parseProgressText, cancelParseBtn;
 
 // Current state
 let currentTab = null;
@@ -34,9 +35,15 @@ async function init() {
   modalCreate = document.getElementById('modal-create');
   settingsBtn = document.getElementById('settings-btn');
   openNotebookBtn = document.getElementById('open-notebook-btn');
+  parseCommentsBtn = document.getElementById('parse-comments-btn');
+  parseProgress = document.getElementById('parse-progress');
+  parseProgressText = document.getElementById('parse-progress-text');
+  cancelParseBtn = document.getElementById('cancel-parse-btn');
 
   // Set up event listeners
   addBtn.addEventListener('click', handleAddToNotebook);
+  parseCommentsBtn.addEventListener('click', handleParseComments);
+  cancelParseBtn.addEventListener('click', handleCancelParse);
   newNotebookBtn.addEventListener('click', showNewNotebookModal);
   bulkBtn.addEventListener('click', openBulkImport);
   tabsBtn.addEventListener('click', openTabsImport);
@@ -51,6 +58,7 @@ async function init() {
   await loadCurrentTab();
   await loadAccounts();
   await loadNotebooks();
+  await checkActiveParse();
 }
 
 // Get localized string
@@ -121,6 +129,11 @@ function detectYouTubePageType(url) {
     addBtn.append('📺 ', addChannelText);
     const channelLabel = t('popup_channel', 'Channel');
     currentUrlDiv.textContent = `📺 ${channelLabel}: ${currentTab.title.replace(' - YouTube', '')}`;
+  }
+
+  // Show parse comments button for video pages
+  if (youtubePageType === 'video' || youtubePageType === 'playlist_video') {
+    updateParseButtonState();
   }
 }
 
@@ -208,6 +221,11 @@ async function loadNotebooks() {
         notebookSelect.appendChild(option);
       });
       addBtn.disabled = false;
+    }
+
+    // Update parse button after notebooks are loaded
+    if (youtubePageType === 'video' || youtubePageType === 'playlist_video') {
+      updateParseButtonState();
     }
   } catch (error) {
     console.error('Error loading notebooks:', error);
@@ -510,6 +528,10 @@ async function handleNotebookChange() {
   } else {
     addBtn.disabled = true;
   }
+  // Update parse button state if visible
+  if (!parseCommentsBtn.classList.contains('hidden') || (youtubePageType === 'video' || youtubePageType === 'playlist_video')) {
+    updateParseButtonState();
+  }
 }
 
 // Open selected notebook in new tab
@@ -561,6 +583,161 @@ function openSettings() {
   chrome.tabs.create({
     url: chrome.runtime.getURL('app/app.html#settings')
   });
+}
+
+// Update parse comments button state based on API key availability
+async function updateParseButtonState() {
+  parseCommentsBtn.classList.remove('hidden');
+  const storage = await chrome.storage.local.get(['youtubeApiKey']);
+  if (!storage.youtubeApiKey) {
+    parseCommentsBtn.disabled = true;
+    parseCommentsBtn.title = t('comments_apiKeyMissing', 'Set YouTube API key in Settings first');
+  } else {
+    parseCommentsBtn.disabled = !notebookSelect.value;
+    parseCommentsBtn.title = '';
+  }
+}
+
+// Extract video ID from URL
+function extractVideoIdFromUrl(url) {
+  if (!url) return null;
+  const patterns = [
+    /[?&]v=([a-zA-Z0-9_-]{11})/,
+    /youtu\.be\/([a-zA-Z0-9_-]{11})/,
+    /\/embed\/([a-zA-Z0-9_-]{11})/,
+    /\/shorts\/([a-zA-Z0-9_-]{11})/
+  ];
+  for (const p of patterns) {
+    const m = url.match(p);
+    if (m) return m[1];
+  }
+  return null;
+}
+
+// Handle parse comments button click
+async function handleParseComments() {
+  const notebookId = notebookSelect.value;
+  if (!notebookId || !currentTab) return;
+
+  const videoId = extractVideoIdFromUrl(currentTab.url);
+  if (!videoId) {
+    showStatus('error', t('comments_notYoutubePage', 'Cannot detect video ID'));
+    return;
+  }
+
+  const storage = await chrome.storage.local.get(['youtubeApiKey']);
+  if (!storage.youtubeApiKey) {
+    showStatus('error', t('comments_apiKeyMissing', 'Set YouTube API key in Settings first'));
+    return;
+  }
+
+  // Start parse
+  parseCommentsBtn.classList.add('hidden');
+  parseProgress.classList.remove('hidden');
+  parseProgressText.textContent = t('comments_loadingComments', 'Loading comments...');
+
+  const response = await sendMessage({
+    cmd: 'parse-comments',
+    notebookId,
+    videoId,
+    apiKey: storage.youtubeApiKey
+  });
+
+  if (response.error) {
+    parseProgress.classList.add('hidden');
+    parseCommentsBtn.classList.remove('hidden');
+    showStatus('error', response.error);
+    return;
+  }
+
+  startProgressPolling();
+}
+
+// Poll get-parse-status every 500ms
+let pollInterval = null;
+function startProgressPolling() {
+  if (pollInterval) clearInterval(pollInterval);
+  pollInterval = setInterval(async () => {
+    const status = await sendMessage({ cmd: 'get-parse-status' });
+    updateParseUI(status);
+  }, 500);
+}
+
+function stopProgressPolling() {
+  if (pollInterval) {
+    clearInterval(pollInterval);
+    pollInterval = null;
+  }
+}
+
+// Update parse UI based on status
+function updateParseUI(status) {
+  const phase = status.progress?.phase;
+
+  if (phase === 'fetching') {
+    const fetched = status.progress.fetched || 0;
+    const total = status.progress.total;
+    const totalStr = total ? ` / ~${total}` : '';
+    parseProgressText.textContent = `${t('comments_loadingComments', 'Loading comments...')} (${fetched}${totalStr})`;
+  } else if (phase === 'formatting') {
+    parseProgressText.textContent = t('comments_formatting', 'Formatting...');
+  } else if (phase === 'sending') {
+    parseProgressText.textContent = t('comments_sending', 'Sending to NotebookLM...');
+  } else if (phase === 'done') {
+    stopProgressPolling();
+    parseProgress.classList.add('hidden');
+    const count = status.result?.commentCount || 0;
+    const parts = status.result?.partCount || 1;
+    const partsInfo = parts > 1 ? ` (${parts} parts)` : '';
+    showStatus('success', `✓ ${count} comments parsed${partsInfo}`);
+    parseCommentsBtn.classList.remove('hidden');
+  } else if (phase === 'error') {
+    stopProgressPolling();
+    parseProgress.classList.add('hidden');
+    parseCommentsBtn.classList.remove('hidden');
+    showStatus('error', mapParseError(status.error?.code, status.error?.message));
+  } else if (phase === 'cancelled') {
+    stopProgressPolling();
+    parseProgress.classList.add('hidden');
+    parseCommentsBtn.classList.remove('hidden');
+    showStatus('error', t('comments_cancelled', 'Parsing cancelled'));
+  }
+}
+
+// Map error codes to user-friendly messages
+function mapParseError(code, message) {
+  const map = {
+    QUOTA_EXCEEDED: t('comments_apiQuotaExceeded', 'YouTube API quota exceeded. Try again tomorrow.'),
+    COMMENTS_DISABLED: t('comments_commentsDisabled', 'Comments are disabled for this video'),
+    VIDEO_NOT_FOUND: t('comments_videoNotFound', 'Video not found'),
+    INVALID_REQUEST: t('comments_apiKeyInvalid', 'Invalid API key or request'),
+    NETWORK_ERROR: t('comments_networkError', 'Network error. Check your connection.')
+  };
+  return map[code] || message || t('popup_error', 'Error');
+}
+
+// Handle cancel parse
+async function handleCancelParse() {
+  await sendMessage({ cmd: 'cancel-parse' });
+  stopProgressPolling();
+  parseProgress.classList.add('hidden');
+  parseCommentsBtn.classList.remove('hidden');
+  showStatus('error', t('comments_cancelled', 'Parsing cancelled'));
+}
+
+// Check if parse is active (e.g., popup reopened)
+async function checkActiveParse() {
+  try {
+    const status = await sendMessage({ cmd: 'get-parse-status' });
+    if (status.active || (status.progress?.phase && !['idle', 'done', 'error', 'cancelled'].includes(status.progress.phase))) {
+      parseCommentsBtn.classList.add('hidden');
+      parseProgress.classList.remove('hidden');
+      startProgressPolling();
+      updateParseUI(status);
+    }
+  } catch (e) {
+    // Ignore
+  }
 }
 
 // Send message to background script

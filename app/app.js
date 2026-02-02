@@ -10,6 +10,7 @@ let tabsContainer, tabsCount, importTabsBtn, selectAllTabs;
 let progressContainer, progressFill, progressText;
 let statusDiv;
 let settingsAccountSelect, settingsLanguageSelect, autoOpenNotebook, enableBulkDelete;
+let youtubeApiKeyInput, saveApiKeyBtn, apiKeyStatus;
 
 // State
 let notebooks = [];
@@ -44,6 +45,9 @@ async function init() {
   settingsLanguageSelect = document.getElementById('settings-language-select');
   autoOpenNotebook = document.getElementById('auto-open-notebook');
   enableBulkDelete = document.getElementById('enable-bulk-delete');
+  youtubeApiKeyInput = document.getElementById('youtube-api-key');
+  saveApiKeyBtn = document.getElementById('save-api-key-btn');
+  apiKeyStatus = document.getElementById('api-key-status');
 
   // Set up event listeners
   document.querySelectorAll('.tab').forEach(tab => {
@@ -69,6 +73,9 @@ async function init() {
   }
   if (enableBulkDelete) {
     enableBulkDelete.addEventListener('change', handleBulkDeleteChange);
+  }
+  if (saveApiKeyBtn) {
+    saveApiKeyBtn.addEventListener('click', handleSaveApiKey);
   }
 
   // Check URL hash for initial tab
@@ -604,6 +611,19 @@ async function loadSettings() {
       enableBulkDelete.checked = storage.enableBulkDelete !== false;
     }
 
+    // Load API key
+    if (youtubeApiKeyInput) {
+      const local = await chrome.storage.local.get(['youtubeApiKey']);
+      if (local.youtubeApiKey) {
+        youtubeApiKeyInput.value = local.youtubeApiKey;
+        const validText = I18n ? I18n.get('comments_apiKeyValid') : 'Key saved';
+        if (apiKeyStatus) {
+          apiKeyStatus.textContent = '✓ ' + validText;
+          apiKeyStatus.style.color = '#137333';
+        }
+      }
+    }
+
   } catch (error) {
     console.error('Error loading settings:', error);
   }
@@ -645,4 +665,50 @@ async function handleAutoOpenChange() {
 // Handle bulk delete checkbox change
 async function handleBulkDeleteChange() {
   await chrome.storage.sync.set({ enableBulkDelete: enableBulkDelete.checked });
+}
+
+// Handle save API key
+async function handleSaveApiKey() {
+  const apiKey = youtubeApiKeyInput.value.trim();
+  if (!apiKey) {
+    if (apiKeyStatus) {
+      apiKeyStatus.textContent = '';
+    }
+    await chrome.storage.local.remove('youtubeApiKey');
+    return;
+  }
+
+  try {
+    saveApiKeyBtn.disabled = true;
+    const validatingText = I18n ? I18n.get('comments_apiKeyValidating') : 'Validating...';
+    if (apiKeyStatus) {
+      apiKeyStatus.textContent = validatingText;
+      apiKeyStatus.style.color = '#1a73e8';
+    }
+
+    const result = await sendMessage({ cmd: 'validate-api-key', apiKey });
+
+    if (result.valid) {
+      await chrome.storage.local.set({ youtubeApiKey: apiKey });
+      const validText = I18n ? I18n.get('comments_apiKeyValid') : 'Key valid';
+      if (apiKeyStatus) {
+        apiKeyStatus.textContent = '✓ ' + validText;
+        apiKeyStatus.style.color = '#137333';
+      }
+    } else {
+      const invalidText = I18n ? I18n.get('comments_apiKeyInvalid') : 'Invalid API key';
+      if (apiKeyStatus) {
+        apiKeyStatus.textContent = '✗ ' + invalidText;
+        apiKeyStatus.style.color = '#c5221f';
+      }
+    }
+  } catch (error) {
+    const errorText = I18n ? I18n.get('comments_networkError') : 'Network error';
+    if (apiKeyStatus) {
+      apiKeyStatus.textContent = '✗ ' + errorText;
+      apiKeyStatus.style.color = '#c5221f';
+    }
+  } finally {
+    saveApiKeyBtn.disabled = false;
+  }
 }
