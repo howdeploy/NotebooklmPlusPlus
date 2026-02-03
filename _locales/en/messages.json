@@ -232,7 +232,7 @@
     "description": "About section title"
   },
   "settings_aboutText": {
-    "message": "Import YouTube videos, web pages, and other content directly into Google NotebookLM.",
+    "message": "Chrome extension for importing YouTube videos, playlists, channels, web pages and comments into Google NotebookLM. Supports bulk import and multiple Google accounts.",
     "description": "About text"
   },
   "settings_openNotebookLM": {

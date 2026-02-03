@@ -232,7 +232,7 @@
     "description": "Заголовок раздела О расширении"
   },
   "settings_aboutText": {
-    "message": "Импортируйте видео YouTube, веб-страницы и другой контент непосредственно в Google NotebookLM.",
+    "message": "Chrome-расширение для импорта YouTube видео, плейлистов, каналов, веб-страниц и комментариев в Google NotebookLM. Поддержка массового импорта и нескольких аккаунтов Google.",
     "description": "Текст о расширении"
   },
   "settings_openNotebookLM": {
