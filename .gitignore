@@ -4,6 +4,11 @@
 TODO.md
 task.md
 
+# Internal documentation (Claude Code context)
+docs/
+CLAUDE.md
+RESUME_CONTEXT.md
+
 # Python virtual environment
 .venv/
 

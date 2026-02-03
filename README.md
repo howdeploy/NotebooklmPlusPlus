@@ -34,7 +34,10 @@
 
 ## Лицензия
 
-MIT
+MIT — свободно используйте, модифицируйте и распространяйте.
+
+Если проект оказался полезен, буду благодарен за упоминание:
+**[@AndyShaman](https://github.com/AndyShaman)** · [add_to_NotebookLM](https://github.com/AndyShaman/add_to_NotebookLM)
 
 ---
 
@@ -74,4 +77,7 @@ Chrome extension for importing YouTube videos and web pages into Google Notebook
 
 ## License
 
-MIT
+MIT — free to use, modify, and distribute.
+
+If you found this project useful, I'd appreciate a mention:
+**[@AndyShaman](https://github.com/AndyShaman)** · [add_to_NotebookLM](https://github.com/AndyShaman/add_to_NotebookLM)
