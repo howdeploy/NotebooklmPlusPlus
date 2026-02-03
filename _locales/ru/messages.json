@@ -243,6 +243,14 @@
     "message": "Аккаунт изменён. Ноутбуки перезагружены.",
     "description": "Сообщение об изменении аккаунта"
   },
+  "settings_darkMode": {
+    "message": "Тёмная тема",
+    "description": "Переключатель тёмной темы"
+  },
+  "settings_darkModeHint": {
+    "message": "Переключение между светлой и тёмной темой",
+    "description": "Подсказка переключателя темы"
+  },
   "common_sources": {
     "message": "источников",
     "description": "Метка источников"

@@ -71,29 +71,36 @@
     deleteButton.style.cssText = `
       display: none;
       align-items: center;
-      gap: 6px;
-      background: transparent;
-      color: #c4c7c5;
-      border: 1px solid #5f6368;
-      border-radius: 20px;
-      padding: 8px 16px;
+      gap: 8px;
+      background: rgba(255, 59, 48, 0.15);
+      color: #FF3B30;
+      border: 1px solid rgba(255, 59, 48, 0.3);
+      border-radius: 50px;
+      padding: 10px 20px;
       font-size: 14px;
-      font-weight: 500;
+      font-weight: 600;
       cursor: pointer;
-      font-family: 'Google Sans', Roboto, sans-serif;
-      transition: background 0.2s, border-color 0.2s;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Google Sans', Roboto, sans-serif;
+      transition: all 0.2s ease;
       margin-left: 12px;
       white-space: nowrap;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 4px 16px rgba(255, 59, 48, 0.2);
     `;
 
     deleteButton.addEventListener('mouseenter', () => {
-      deleteButton.style.background = 'rgba(255, 255, 255, 0.1)';
-      deleteButton.style.borderColor = '#8e918f';
+      deleteButton.style.background = 'rgba(255, 59, 48, 0.25)';
+      deleteButton.style.borderColor = 'rgba(255, 59, 48, 0.5)';
+      deleteButton.style.transform = 'translateY(-2px)';
+      deleteButton.style.boxShadow = '0 6px 20px rgba(255, 59, 48, 0.3)';
     });
 
     deleteButton.addEventListener('mouseleave', () => {
-      deleteButton.style.background = 'transparent';
-      deleteButton.style.borderColor = '#5f6368';
+      deleteButton.style.background = 'rgba(255, 59, 48, 0.15)';
+      deleteButton.style.borderColor = 'rgba(255, 59, 48, 0.3)';
+      deleteButton.style.transform = 'translateY(0)';
+      deleteButton.style.boxShadow = '0 4px 16px rgba(255, 59, 48, 0.2)';
     });
 
     deleteButton.addEventListener('click', handleDeleteClick);
@@ -244,7 +251,9 @@
     deleteButton.disabled = false;
     deleteButton.style.opacity = '1';
     deleteButton.style.cursor = 'pointer';
-    deleteButton.style.background = 'transparent';
+    deleteButton.style.background = 'rgba(255, 59, 48, 0.15)';
+    deleteButton.style.transform = 'translateY(0)';
+    deleteButton.style.boxShadow = '0 4px 16px rgba(255, 59, 48, 0.2)';
     updateButtonVisibility();
   }
 
@@ -271,8 +280,10 @@
       deleteButton.style.display = 'flex';
       deleteButton.disabled = false;
       deleteButton.style.opacity = '1';
-      deleteButton.style.background = 'transparent';
+      deleteButton.style.background = 'rgba(255, 59, 48, 0.15)';
       deleteButton.style.cursor = 'pointer';
+      deleteButton.style.transform = 'translateY(0)';
+      deleteButton.style.boxShadow = '0 4px 16px rgba(255, 59, 48, 0.2)';
     } else {
       deleteButton.style.display = 'none';
     }

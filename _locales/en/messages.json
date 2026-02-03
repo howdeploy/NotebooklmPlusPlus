@@ -243,6 +243,14 @@
     "message": "Account changed. Notebooks reloaded.",
     "description": "Account changed message"
   },
+  "settings_darkMode": {
+    "message": "Dark Mode",
+    "description": "Dark mode toggle label"
+  },
+  "settings_darkModeHint": {
+    "message": "Switch between light and dark theme",
+    "description": "Dark mode toggle hint"
+  },
   "common_sources": {
     "message": "sources",
     "description": "Sources label"

@@ -1,5 +1,18 @@
 // Popup script for Add to NotebookLM
 
+// Initialize theme immediately (before DOMContentLoaded)
+(async function initThemeEarly() {
+  try {
+    const storage = await chrome.storage.sync.get(['theme']);
+    const theme = storage.theme || 'light';
+    if (theme === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
+  } catch (e) {
+    // Default to light theme
+  }
+})();
+
 document.addEventListener('DOMContentLoaded', init);
 
 // DOM elements
@@ -753,3 +766,15 @@ function sendMessage(message) {
     });
   });
 }
+
+// Listen for theme changes from settings
+chrome.storage.onChanged.addListener((changes, namespace) => {
+  if (namespace === 'sync' && changes.theme) {
+    const theme = changes.theme.newValue || 'light';
+    if (theme === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
+  }
+});

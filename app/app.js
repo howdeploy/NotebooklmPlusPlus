@@ -11,6 +11,7 @@ let progressContainer, progressFill, progressText;
 let statusDiv;
 let settingsAccountSelect, settingsLanguageSelect, autoOpenNotebook, enableBulkDelete;
 let commentsModeSelect, commentsLimitSelect, commentsLimitGroup, commentsIncludeReplies;
+let themeToggle;
 
 // State
 let notebooks = [];
@@ -19,6 +20,9 @@ let selectedTabs = new Set();
 let currentTab = 'links';
 
 async function init() {
+  // Initialize theme first (before any rendering)
+  await initTheme();
+
   // Initialize localization first
   if (window.I18n) {
     await I18n.init();
@@ -49,6 +53,7 @@ async function init() {
   commentsLimitSelect = document.getElementById('comments-limit');
   commentsLimitGroup = document.getElementById('comments-limit-group');
   commentsIncludeReplies = document.getElementById('comments-include-replies');
+  themeToggle = document.getElementById('theme-toggle');
 
   // Set up event listeners
   document.querySelectorAll('.tab').forEach(tab => {
@@ -83,6 +88,15 @@ async function init() {
   }
   if (commentsIncludeReplies) {
     commentsIncludeReplies.addEventListener('change', handleCommentsRepliesChange);
+  }
+  if (themeToggle) {
+    themeToggle.addEventListener('click', handleThemeToggle);
+    themeToggle.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        handleThemeToggle();
+      }
+    });
   }
 
   // Check URL hash for initial tab
@@ -574,7 +588,14 @@ async function loadSettings() {
     }
 
     // Load saved settings
-    const storage = await chrome.storage.sync.get(['selectedAccount', 'autoOpenNotebook', 'enableBulkDelete', 'language']);
+    const storage = await chrome.storage.sync.get(['selectedAccount', 'autoOpenNotebook', 'enableBulkDelete', 'language', 'theme']);
+
+    // Initialize theme toggle state
+    if (themeToggle) {
+      const isDark = storage.theme === 'dark';
+      themeToggle.classList.toggle('active', isDark);
+      themeToggle.setAttribute('aria-checked', isDark ? 'true' : 'false');
+    }
 
     // Set current language in selector
     if (settingsLanguageSelect && I18n) {
@@ -706,3 +727,50 @@ async function handleCommentsLimitChange() {
 async function handleCommentsRepliesChange() {
   await chrome.storage.local.set({ commentsIncludeReplies: commentsIncludeReplies.checked });
 }
+
+// ===== Theme Management =====
+
+// Initialize theme from storage
+async function initTheme() {
+  try {
+    const storage = await chrome.storage.sync.get(['theme']);
+    const theme = storage.theme || 'light';
+    applyTheme(theme);
+  } catch (e) {
+    // Default to light theme
+    applyTheme('light');
+  }
+}
+
+// Apply theme to document
+function applyTheme(theme) {
+  if (theme === 'dark') {
+    document.documentElement.setAttribute('data-theme', 'dark');
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+  }
+
+  // Update toggle state if it exists
+  const toggle = document.getElementById('theme-toggle');
+  if (toggle) {
+    const isDark = theme === 'dark';
+    toggle.classList.toggle('active', isDark);
+    toggle.setAttribute('aria-checked', isDark ? 'true' : 'false');
+  }
+}
+
+// Handle theme toggle click
+async function handleThemeToggle() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const newTheme = isDark ? 'light' : 'dark';
+
+  applyTheme(newTheme);
+  await chrome.storage.sync.set({ theme: newTheme });
+}
+
+// Listen for theme changes from other contexts (popup, other tabs)
+chrome.storage.onChanged.addListener((changes, namespace) => {
+  if (namespace === 'sync' && changes.theme) {
+    applyTheme(changes.theme.newValue || 'light');
+  }
+});
