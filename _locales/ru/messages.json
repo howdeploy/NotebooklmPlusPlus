@@ -12,19 +12,19 @@
     "description": "Метка текущей страницы"
   },
   "popup_selectNotebook": {
-    "message": "Добавить в ноутбук:",
-    "description": "Метка выбора ноутбука"
+    "message": "Добавить в нотбук:",
+    "description": "Метка выбора нотбука"
   },
   "popup_addToNotebook": {
-    "message": "Добавить в ноутбук",
+    "message": "Добавить в нотбук",
     "description": "Текст кнопки добавления"
   },
   "popup_addVideo": {
-    "message": "Добавить видео в ноутбук",
+    "message": "Добавить видео в нотбук",
     "description": "Текст кнопки добавления видео"
   },
   "popup_addPlaylist": {
-    "message": "Добавить плейлист в ноутбук",
+    "message": "Добавить плейлист в нотбук",
     "description": "Текст кнопки добавления плейлиста"
   },
   "popup_addAllPlaylist": {
@@ -32,12 +32,12 @@
     "description": "Текст кнопки добавления всех видео"
   },
   "popup_addChannelVideos": {
-    "message": "Добавить видео канала в ноутбук",
+    "message": "Добавить видео канала в нотбук",
     "description": "Текст кнопки добавления видео канала"
   },
   "popup_createNotebook": {
-    "message": "Создать новый ноутбук",
-    "description": "Кнопка создания ноутбука"
+    "message": "Создать новый нотбук",
+    "description": "Кнопка создания нотбука"
   },
   "popup_bulkImport": {
     "message": "Массовый импорт",
@@ -52,8 +52,8 @@
     "description": "Состояние загрузки"
   },
   "popup_loadingNotebooks": {
-    "message": "Загрузка ноутбуков...",
-    "description": "Загрузка ноутбуков"
+    "message": "Загрузка нотбуков...",
+    "description": "Загрузка нотбуков"
   },
   "popup_success": {
     "message": "Успешно добавлено!",
@@ -68,16 +68,16 @@
     "description": "Сообщение о необходимости входа"
   },
   "popup_noNotebooks": {
-    "message": "Ноутбуки не найдены",
-    "description": "Сообщение об отсутствии ноутбуков"
+    "message": "Нотбуки не найдены",
+    "description": "Сообщение об отсутствии нотбуков"
   },
   "popup_tools": {
     "message": "Инструменты:",
     "description": "Метка секции инструментов"
   },
   "popup_openNotebook": {
-    "message": "Открыть ноутбук",
-    "description": "Кнопка открытия ноутбука"
+    "message": "Открыть нотбук",
+    "description": "Кнопка открытия нотбука"
   },
   "popup_cancel": {
     "message": "Отмена",
@@ -88,15 +88,15 @@
     "description": "Кнопка создания и добавления"
   },
   "popup_notebookName": {
-    "message": "Название ноутбука",
-    "description": "Placeholder названия ноутбука"
+    "message": "Название нотбука",
+    "description": "Placeholder названия нотбука"
   },
   "popup_extractingVideos": {
     "message": "Извлечение видео из",
     "description": "Сообщение об извлечении видео"
   },
   "popup_addingVideos": {
-    "message": "Добавление видео в ноутбук...",
+    "message": "Добавление видео в нотбук...",
     "description": "Сообщение о добавлении видео"
   },
   "popup_noVideosFound": {
@@ -148,8 +148,8 @@
     "description": "Вкладка настроек"
   },
   "bulk_selectNotebook": {
-    "message": "Выберите ноутбук",
-    "description": "Заголовок выбора ноутбука"
+    "message": "Выберите нотбук",
+    "description": "Заголовок выбора нотбука"
   },
   "bulk_pasteLinks": {
     "message": "Вставьте ссылки",
@@ -176,12 +176,12 @@
     "description": "Кнопка импорта вкладок"
   },
   "bulk_openNotebook": {
-    "message": "Открыть ноутбук",
-    "description": "Ссылка на открытие ноутбука"
+    "message": "Открыть нотбук",
+    "description": "Ссылка на открытие нотбука"
   },
   "bulk_createNewNotebook": {
-    "message": "Создать новый ноутбук",
-    "description": "Кнопка создания ноутбука"
+    "message": "Создать новый нотбук",
+    "description": "Кнопка создания нотбука"
   },
   "bulk_loadingTabs": {
     "message": "Загрузка вкладок...",
@@ -216,7 +216,7 @@
     "description": "Подсказка выбора аккаунта"
   },
   "settings_autoOpen": {
-    "message": "Автоматически открывать ноутбук после добавления источников",
+    "message": "Автоматически открывать нотбук после добавления источников",
     "description": "Настройка автооткрытия"
   },
   "settings_youtube": {
@@ -240,7 +240,7 @@
     "description": "Кнопка открытия NotebookLM"
   },
   "settings_accountChanged": {
-    "message": "Аккаунт изменён. Ноутбуки перезагружены.",
+    "message": "Аккаунт изменён. Нотбуки перезагружены.",
     "description": "Сообщение об изменении аккаунта"
   },
   "settings_darkMode": {
@@ -349,7 +349,7 @@
   },
   "comments_commentsParsed": {
     "message": "комментариев добавлено в",
-    "description": "Комментарии спаршены и добавлены в ноутбук"
+    "description": "Комментарии спаршены и добавлены в нотбук"
   },
   "comments_invalidRequest": {
     "message": "Неверный запрос",
