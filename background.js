@@ -745,7 +745,8 @@ async function doParseComments(notebookId, videoId, tabId) {
 
   try {
     // Phase 1: Fetch metadata from DOM (no API key needed)
-    const metadata = await YouTubeCommentsAPI.getVideoMetadataFromDOM(tabId);
+    // Pass videoId as fallback in case DOM extraction fails
+    const metadata = await YouTubeCommentsAPI.getVideoMetadataFromDOM(tabId, videoId);
     parseState.progress.total = metadata.commentCount;
 
     if (cancelToken.cancelled) return;
