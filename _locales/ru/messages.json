@@ -127,6 +127,14 @@
     "message": "Канал",
     "description": "Метка канала"
   },
+  "app_title": {
+    "message": "Add to NotebookLM",
+    "description": "Заголовок страницы приложения"
+  },
+  "app_description": {
+    "message": "Ваш набор инструментов для работы с NotebookLM",
+    "description": "Описание страницы приложения"
+  },
   "bulk_title": {
     "message": "Массовый импорт",
     "description": "Заголовок страницы массового импорта"
@@ -354,6 +362,22 @@
   "comments_invalidRequest": {
     "message": "Неверный запрос",
     "description": "Ошибка неверного запроса"
+  },
+  "popup_addAsPdf": {
+    "message": "Добавить как PDF",
+    "description": "Кнопка добавления как PDF"
+  },
+  "popup_capturingPdf": {
+    "message": "Захват страницы в PDF...",
+    "description": "Сообщение о захвате PDF"
+  },
+  "popup_pdfSuccess": {
+    "message": "Страница добавлена как PDF!",
+    "description": "PDF успешно добавлен"
+  },
+  "popup_pdfError": {
+    "message": "Не удалось захватить эту страницу как PDF",
+    "description": "Ошибка захвата PDF"
   },
   "settings_enableSyncDrive": {
     "message": "Включить кнопку синхронизации Drive в NotebookLM",

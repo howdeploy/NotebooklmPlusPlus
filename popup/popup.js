@@ -16,7 +16,7 @@
 document.addEventListener('DOMContentLoaded', init);
 
 // DOM elements
-let notebookSelect, addBtn, newNotebookBtn, bulkBtn, tabsBtn;
+let notebookSelect, addBtn, addPdfBtn, newNotebookBtn, bulkBtn, tabsBtn;
 let accountSelect, statusDiv, currentUrlDiv, settingsBtn, openNotebookBtn;
 let newNotebookModal, newNotebookInput, modalCancel, modalCreate;
 let parseCommentsBtn, parseProgress, parseProgressText, cancelParseBtn;
@@ -36,6 +36,7 @@ async function init() {
   // Get DOM elements
   notebookSelect = document.getElementById('notebook-select');
   addBtn = document.getElementById('add-btn');
+  addPdfBtn = document.getElementById('add-pdf-btn');
   newNotebookBtn = document.getElementById('new-notebook-btn');
   bulkBtn = document.getElementById('bulk-btn');
   tabsBtn = document.getElementById('tabs-btn');
@@ -55,6 +56,7 @@ async function init() {
 
   // Set up event listeners
   addBtn.addEventListener('click', handleAddToNotebook);
+  addPdfBtn.addEventListener('click', handleAddAsPdf);
   parseCommentsBtn.addEventListener('click', handleParseComments);
   cancelParseBtn.addEventListener('click', handleCancelParse);
   newNotebookBtn.addEventListener('click', showNewNotebookModal);
@@ -202,6 +204,7 @@ async function loadNotebooks() {
       loginOption.textContent = loginText;
       notebookSelect.appendChild(loginOption);
       addBtn.disabled = true;
+      addPdfBtn.disabled = true;
       return;
     }
 
@@ -222,6 +225,7 @@ async function loadNotebooks() {
       emptyOption.textContent = noNotebooksText;
       notebookSelect.appendChild(emptyOption);
       addBtn.disabled = true;
+      addPdfBtn.disabled = true;
     } else {
       const sourcesText = t('common_sources', 'sources');
       notebooks.forEach(nb => {
@@ -234,6 +238,15 @@ async function loadNotebooks() {
         notebookSelect.appendChild(option);
       });
       addBtn.disabled = false;
+      addPdfBtn.disabled = false;
+    }
+
+    // Hide PDF button for restricted pages
+    if (currentTab && currentTab.url) {
+      const url = currentTab.url;
+      if (url.startsWith('chrome://') || url.startsWith('chrome-extension://') || url.startsWith('about:') || url.includes('youtube.com') || url.includes('youtu.be')) {
+        addPdfBtn.classList.add('hidden');
+      }
     }
 
     // Update parse button after notebooks are loaded
@@ -245,6 +258,7 @@ async function loadNotebooks() {
     const errorText = t('popup_error', 'Failed to load notebooks');
     showStatus('error', errorText);
     addBtn.disabled = true;
+    addPdfBtn.disabled = true;
   }
 }
 
@@ -322,6 +336,42 @@ async function handleAddToNotebook() {
     const errorText = t('popup_error', 'Failed to add to notebook');
     showStatus('error', errorText);
   } finally {
+    addBtn.disabled = false;
+  }
+}
+
+// Handle add as PDF
+async function handleAddAsPdf() {
+  const notebookId = notebookSelect.value;
+  if (!notebookId || !currentTab) return;
+
+  try {
+    addPdfBtn.disabled = true;
+    addBtn.disabled = true;
+    showStatus('loading', t('popup_capturingPdf', 'Capturing page as PDF...'));
+
+    const response = await sendMessage({
+      cmd: 'add-as-pdf',
+      notebookId: notebookId,
+      tabId: currentTab.id,
+      title: currentTab.title || 'page'
+    });
+
+    if (response.error) {
+      showStatus('error', t('popup_pdfError', 'Cannot capture this page as PDF'));
+    } else {
+      await chrome.storage.sync.set({ lastNotebook: notebookId });
+      showStatus('success', `✓ ${t('popup_pdfSuccess', 'Page added as PDF!')}`);
+
+      setTimeout(() => {
+        const notebook = notebooks.find(n => n.id === notebookId);
+        if (notebook) showSuccessWithActions(notebook);
+      }, 500);
+    }
+  } catch (error) {
+    showStatus('error', t('popup_pdfError', 'Cannot capture this page as PDF'));
+  } finally {
+    addPdfBtn.disabled = false;
     addBtn.disabled = false;
   }
 }
@@ -543,8 +593,10 @@ async function handleNotebookChange() {
   if (notebookId) {
     await chrome.storage.sync.set({ lastNotebook: notebookId });
     addBtn.disabled = false;
+    addPdfBtn.disabled = false;
   } else {
     addBtn.disabled = true;
+    addPdfBtn.disabled = true;
   }
   // Update parse button state if visible
   if (!parseCommentsBtn.classList.contains('hidden') || (youtubePageType === 'video' || youtubePageType === 'playlist_video')) {

@@ -127,6 +127,14 @@
     "message": "Channel",
     "description": "Channel label"
   },
+  "app_title": {
+    "message": "Add to NotebookLM",
+    "description": "App page title"
+  },
+  "app_description": {
+    "message": "Your toolkit for working with NotebookLM",
+    "description": "App page description"
+  },
   "bulk_title": {
     "message": "Bulk Import",
     "description": "Bulk import page title"
@@ -354,6 +362,22 @@
   "comments_invalidRequest": {
     "message": "Invalid request",
     "description": "Invalid request error"
+  },
+  "popup_addAsPdf": {
+    "message": "Add as PDF",
+    "description": "Add as PDF button text"
+  },
+  "popup_capturingPdf": {
+    "message": "Capturing page as PDF...",
+    "description": "PDF capture loading message"
+  },
+  "popup_pdfSuccess": {
+    "message": "Page added as PDF!",
+    "description": "PDF added successfully"
+  },
+  "popup_pdfError": {
+    "message": "Cannot capture this page as PDF",
+    "description": "PDF capture error"
   },
   "settings_enableSyncDrive": {
     "message": "Enable Drive sync button in NotebookLM",

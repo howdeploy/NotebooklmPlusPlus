@@ -146,6 +146,82 @@ const NotebookLMAPI = {
     return response;
   },
 
+  // Register a PDF source in the notebook (step 1 of PDF upload)
+  async registerPdfSource(notebookId, filename) {
+    const response = await this.rpc('o4cbdc', [[[filename]], notebookId, [2], [1,null,null,null,null,null,null,null,null,null,[1]]], `/notebook/${notebookId}`);
+    const uuidMatch = response.match(/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/);
+    if (!uuidMatch) {
+      throw new Error('Failed to register PDF source');
+    }
+    return uuidMatch[0];
+  },
+
+  // Get a resumable upload URL from SCOTTY (step 2 of PDF upload)
+  async getUploadUrl(notebookId, filename, sourceId, byteLength) {
+    const authuser = this.tokens.authuser || 0;
+    const url = `https://notebooklm.google.com/upload/_/?authuser=${authuser}`;
+    const body = JSON.stringify({
+      PROJECT_ID: notebookId,
+      SOURCE_NAME: filename,
+      SOURCE_ID: sourceId
+    });
+
+    const response = await fetchWithTimeout(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-upload-command': 'start',
+        'x-goog-upload-header-content-length': byteLength.toString(),
+        'x-goog-upload-protocol': 'resumable'
+      },
+      credentials: 'include',
+      body
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to get upload URL: ${response.status}`);
+    }
+
+    const uploadUrl = response.headers.get('x-goog-upload-url');
+    if (!uploadUrl) {
+      throw new Error('No upload URL in response');
+    }
+    return uploadUrl;
+  },
+
+  // Upload PDF bytes to SCOTTY (step 3 of PDF upload)
+  async uploadPdfBytes(uploadUrl, pdfBytes) {
+    const response = await fetchWithTimeout(uploadUrl, {
+      method: 'POST',
+      headers: {
+        'x-goog-upload-command': 'upload, finalize',
+        'x-goog-upload-offset': '0',
+        'Content-Type': 'application/pdf'
+      },
+      credentials: 'include',
+      body: pdfBytes
+    }, 60000);
+
+    if (!response.ok) {
+      throw new Error(`PDF upload failed: ${response.status}`);
+    }
+    return response;
+  },
+
+  // Full PDF upload orchestrator: register → get URL → upload bytes
+  async addPdfSource(notebookId, pdfBase64, filename) {
+    const binaryStr = atob(pdfBase64);
+    const bytes = new Uint8Array(binaryStr.length);
+    for (let i = 0; i < binaryStr.length; i++) {
+      bytes[i] = binaryStr.charCodeAt(i);
+    }
+
+    const sourceId = await this.registerPdfSource(notebookId, filename);
+    const uploadUrl = await this.getUploadUrl(notebookId, filename, sourceId, bytes.byteLength);
+    await this.uploadPdfBytes(uploadUrl, bytes);
+    return { sourceId };
+  },
+
   // Check notebook status (sources loading)
   async getNotebookStatus(notebookId) {
     const response = await this.rpc('rLM1Ne', [notebookId, null, [2]], `/notebook/${notebookId}`);
@@ -376,6 +452,28 @@ const NotebookLMAPI = {
   }
 };
 
+// Generate PDF from a tab using Chrome Debugger API
+async function generatePdf(tabId) {
+  try {
+    await chrome.debugger.attach({ tabId }, '1.3');
+    const result = await chrome.debugger.sendCommand({ tabId }, 'Page.printToPDF', {
+      printBackground: true,
+      preferCSSPageSize: true
+    });
+    return result.data; // base64 encoded PDF
+  } finally {
+    await chrome.debugger.detach({ tabId }).catch(() => {});
+  }
+}
+
+// Add page as PDF to notebook
+async function addAsPdf(notebookId, tabId, title) {
+  const filename = (title || 'page').replace(/[^a-zA-Z0-9а-яА-ЯёЁ _\-\.]/g, '').substring(0, 100) + '.pdf';
+  const pdfBase64 = await generatePdf(tabId);
+  await NotebookLMAPI.addPdfSource(notebookId, pdfBase64, filename);
+  return { success: true };
+}
+
 // ============================================
 // Background Service Worker Logic
 // ============================================
@@ -520,6 +618,13 @@ async function handleMessage(request, sender) {
         parseState.active = false;
       }
       return { success: true };
+
+    case 'add-as-pdf':
+      try {
+        return await addAsPdf(params.notebookId, params.tabId, params.title);
+      } catch (error) {
+        return { error: error.message };
+      }
 
     case 'parse-comments':
       if (parseState.active) {
