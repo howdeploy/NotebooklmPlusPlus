@@ -354,5 +354,13 @@
   "comments_invalidRequest": {
     "message": "Invalid request",
     "description": "Invalid request error"
+  },
+  "settings_enableSyncDrive": {
+    "message": "Enable Drive sync button in NotebookLM",
+    "description": "Drive sync setting label"
+  },
+  "settings_syncDriveHint": {
+    "message": "Shows a sync button to refresh Google Docs and Sheets sources in NotebookLM",
+    "description": "Drive sync setting hint"
   }
 }

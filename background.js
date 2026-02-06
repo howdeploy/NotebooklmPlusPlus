@@ -268,40 +268,79 @@ const NotebookLMAPI = {
 
       if (!innerData || !innerData[0]) return { sources: [] };
 
+      // Structure: innerData[0] = [title, [sources...], notebookId, ...]
       const notebookData = innerData[0];
-      const sourcesArray = notebookData[3] || [];
+      const sourcesArray = Array.isArray(notebookData[1]) ? notebookData[1] : [];
+
+      const typeNames = {
+        1: 'google_docs',
+        2: 'google_other',
+        3: 'pdf',
+        4: 'pasted_text',
+        5: 'web_page',
+        8: 'generated_text',
+        9: 'youtube',
+        11: 'uploaded_file',
+        13: 'image',
+        14: 'word_doc'
+      };
 
       const sources = sourcesArray
-        .filter(source => source && source[0])
+        .filter(source => source && Array.isArray(source[0]) && source[0][0])
         .map(source => {
-          const sourceType = source[3]?.[0] || 0;
-          const typeNames = {
-            1: 'url',
-            3: 'text',
-            4: 'youtube',
-            7: 'pdf',
-            8: 'audio'
-          };
+          // Source structure: [[sourceId], title, [metadata...], [null, 2]]
+          const sourceId = source[0][0];
+          const title = source[1] || 'Untitled';
+          const metadata = Array.isArray(source[2]) ? source[2] : [];
+          const sourceType = metadata[4] || 0;
+          const driveDocId = Array.isArray(metadata[0]) ? metadata[0][0] : null;
+          const url = Array.isArray(metadata[7]) ? metadata[7][0] : null;
 
           return {
-            id: source[0],
-            title: source[2] || 'Untitled',
+            id: sourceId,
+            title: title,
             type: typeNames[sourceType] || 'unknown',
             typeCode: sourceType,
-            url: source[3]?.[1] || null,
-            status: source[4] || 0
+            url: url,
+            driveDocId: driveDocId,
+            canSync: driveDocId != null && (sourceType === 1 || sourceType === 2)
           };
         });
 
       return {
-        id: notebookData[0],
-        title: notebookData[1],
+        id: notebookData[2] || null,
+        title: notebookData[0] || '',
         sources
       };
     } catch (error) {
       console.error('parseNotebookDetails error:', error);
       return { sources: [] };
     }
+  },
+
+  // Check if a Drive source is fresh (up-to-date with Google Drive)
+  // Returns: true = fresh, false = stale, null = not a Drive source
+  async checkSourceFreshness(sourceId, notebookId) {
+    try {
+      const response = await this.rpc('yR9Yof', [null, [sourceId], [2]], `/notebook/${notebookId}`);
+      const lines = response.split('\n');
+      const dataLine = lines.find(line => line.includes('wrb.fr'));
+      if (!dataLine) return null;
+      const parsed = JSON.parse(dataLine);
+      const innerData = JSON.parse(parsed[0][2]);
+      if (innerData && Array.isArray(innerData[0]) && innerData[0].length >= 2) {
+        return innerData[0][1]; // true = fresh, false = stale
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  },
+
+  // Sync a Drive source with latest content from Google Drive
+  async syncDriveSource(sourceId, notebookId) {
+    const response = await this.rpc('FLmJqe', [null, [sourceId], [2]], `/notebook/${notebookId}`);
+    return response;
   },
 
   // Delete a single source from notebook
@@ -459,6 +498,9 @@ async function handleMessage(request, sender) {
     case 'delete-source':
       return await deleteSource(params.notebookId, params.sourceId);
 
+    case 'sync-drive-sources':
+      return await syncDriveSources(params.notebookId);
+
     case 'delete-sources':
       return await deleteSources(params.notebookId, params.sourceIds);
 
@@ -609,6 +651,39 @@ async function deleteSources(notebookId, sourceIds) {
       successCount: result.deletedCount || sourceIds.length,
       failCount: 0
     };
+  } catch (error) {
+    return { error: error.message };
+  }
+}
+
+// Sync all Drive sources in a notebook
+async function syncDriveSources(notebookId) {
+  try {
+    const notebook = await NotebookLMAPI.getNotebook(notebookId);
+    const sources = notebook.sources || [];
+    if (sources.length === 0) return { error: 'No sources found' };
+
+    const results = { synced: 0, fresh: 0, skipped: 0, errors: 0, total: sources.length };
+
+    for (const source of sources) {
+      try {
+        // Check freshness via RPC — returns null for non-Drive sources
+        const isFresh = await NotebookLMAPI.checkSourceFreshness(source.id, notebookId);
+        if (isFresh === null) {
+          results.skipped++;
+        } else if (isFresh === true) {
+          results.fresh++;
+        } else {
+          await NotebookLMAPI.syncDriveSource(source.id, notebookId);
+          results.synced++;
+        }
+      } catch (e) {
+        console.error('Sync error for source', source.id, e);
+        results.errors++;
+      }
+    }
+
+    return { success: true, results };
   } catch (error) {
     return { error: error.message };
   }

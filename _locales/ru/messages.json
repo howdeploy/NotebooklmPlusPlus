@@ -354,5 +354,13 @@
   "comments_invalidRequest": {
     "message": "Неверный запрос",
     "description": "Ошибка неверного запроса"
+  },
+  "settings_enableSyncDrive": {
+    "message": "Включить кнопку синхронизации Drive в NotebookLM",
+    "description": "Настройка синхронизации Drive"
+  },
+  "settings_syncDriveHint": {
+    "message": "Показывает кнопку синхронизации для обновления источников Google Документов и Таблиц в NotebookLM",
+    "description": "Подсказка настройки синхронизации Drive"
   }
 }

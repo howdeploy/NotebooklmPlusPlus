@@ -1,5 +1,6 @@
-// Content script for NotebookLM - Bulk Delete Sources
+// Content script for NotebookLM - Bulk Delete Sources + Drive Sync
 // Injects a delete button when multiple sources are selected
+// Injects a sync button to refresh Google Drive sources
 
 (function() {
   'use strict';
@@ -7,6 +8,11 @@
   let deleteButton = null;
   let isEnabled = true;
   let observer = null;
+
+  // Sync button state
+  let syncButton = null;
+  let isSyncEnabled = true;
+  let isSyncing = false;
 
   // Check if feature is enabled in settings
   async function checkEnabled() {
@@ -289,6 +295,241 @@
     }
   }
 
+  // ============================================
+  // Sync Button — refresh Google Drive sources
+  // ============================================
+
+  const SYNC_ICON_SVG = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6"/><path d="M2.5 22v-6h6"/><path d="M2.5 11.5a10 10 0 0 1 18.4-4.3L21.5 8"/><path d="M21.5 12.5a10 10 0 0 1-18.4 4.3L2.5 16"/></svg>`;
+
+  function createSyncButton() {
+    if (syncButton) return syncButton;
+
+    syncButton = document.createElement('button');
+    syncButton.id = 'nlm-sync-drive-btn';
+    syncButton.innerHTML = SYNC_ICON_SVG;
+    syncButton.title = getLang() === 'ru' ? 'Синхронизировать Google Drive источники' : 'Sync Google Drive sources';
+    syncButton.style.cssText = `
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      background: transparent;
+      color: #9aa0a6;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      padding: 0;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    `;
+
+    syncButton.addEventListener('mouseenter', () => {
+      if (!isSyncing) {
+        syncButton.style.background = 'rgba(138, 180, 248, 0.12)';
+        syncButton.style.color = '#8ab4f8';
+      }
+    });
+
+    syncButton.addEventListener('mouseleave', () => {
+      if (!isSyncing) {
+        syncButton.style.background = 'transparent';
+        syncButton.style.color = '#9aa0a6';
+      }
+    });
+
+    syncButton.addEventListener('click', handleSyncClick);
+    return syncButton;
+  }
+
+  function getLang() {
+    return (document.documentElement.lang || navigator.language || 'en').substring(0, 2);
+  }
+
+  function insertSyncButton() {
+    if (!syncButton) return;
+    if (syncButton.parentElement) return; // Already inserted
+
+    // Find the "Источники" / "Sources" heading
+    const headings = document.querySelectorAll('h2, h3, [class*="heading"], [class*="title"]');
+    let sourcesHeading = null;
+    for (const h of headings) {
+      const text = (h.textContent || '').trim().toLowerCase();
+      if (text === 'источники' || text === 'sources') {
+        sourcesHeading = h;
+        break;
+      }
+    }
+
+    if (sourcesHeading) {
+      // Find the parent container (flex row with heading + collapse icon)
+      let container = sourcesHeading.parentElement;
+      if (container) {
+        // Insert before the last direct child (collapse icon DIV)
+        const lastChild = container.lastElementChild;
+        if (lastChild && lastChild !== sourcesHeading && lastChild !== syncButton) {
+          container.insertBefore(syncButton, lastChild);
+        } else {
+          container.appendChild(syncButton);
+        }
+        return;
+      }
+    }
+
+    // Fallback: fixed position near the sources header
+    syncButton.style.position = 'fixed';
+    syncButton.style.top = '90px';
+    syncButton.style.left = '350px';
+    syncButton.style.zIndex = '10000';
+    document.body.appendChild(syncButton);
+  }
+
+  async function handleSyncClick() {
+    if (isSyncing) return;
+    const notebookId = getNotebookId();
+    if (!notebookId) return;
+
+    const lang = getLang();
+    isSyncing = true;
+
+    // Show spinning animation
+    syncButton.style.color = '#8ab4f8';
+    syncButton.style.animation = 'nlm-spin 1s linear infinite';
+    syncButton.disabled = true;
+    syncButton.style.cursor = 'wait';
+    syncButton.title = lang === 'ru' ? 'Синхронизация...' : 'Syncing...';
+
+    // Add keyframe animation if not present
+    if (!document.getElementById('nlm-sync-styles')) {
+      const style = document.createElement('style');
+      style.id = 'nlm-sync-styles';
+      style.textContent = `@keyframes nlm-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`;
+      document.head.appendChild(style);
+    }
+
+    try {
+      if (!chrome.runtime || !chrome.runtime.sendMessage) {
+        showSyncToast(lang === 'ru' ? 'Перезагрузите страницу (F5)' : 'Reload the page (F5)', 'error');
+        resetSyncButton();
+        return;
+      }
+
+      const response = await chrome.runtime.sendMessage({
+        cmd: 'sync-drive-sources',
+        notebookId: notebookId
+      });
+
+      if (response && response.error) {
+        showSyncToast('Error: ' + response.error, 'error');
+      } else if (response && response.success) {
+        const r = response.results;
+        const driveTotal = r.synced + r.fresh + r.errors;
+
+        if (driveTotal === 0) {
+          showSyncToast(
+            lang === 'ru' ? 'Нет источников Google Drive' : 'No Google Drive sources found',
+            'info'
+          );
+        } else if (r.synced > 0) {
+          showSyncToast(
+            lang === 'ru'
+              ? `Синхронизировано: ${r.synced}, актуальны: ${r.fresh}`
+              : `Synced: ${r.synced}, up-to-date: ${r.fresh}`,
+            'success'
+          );
+          // Reload after a delay to reflect changes
+          setTimeout(() => window.location.reload(), 1500);
+        } else {
+          showSyncToast(
+            lang === 'ru'
+              ? `Все ${r.fresh} Drive-источник(ов) актуальны`
+              : `All ${r.fresh} Drive source(s) up-to-date`,
+            'success'
+          );
+        }
+      } else {
+        showSyncToast(lang === 'ru' ? 'Нет ответа' : 'No response', 'error');
+      }
+    } catch (error) {
+      if (error.message && (error.message.includes('sendMessage') || error.message.includes('Extension context'))) {
+        showSyncToast(getLang() === 'ru' ? 'Перезагрузите страницу (F5)' : 'Reload the page (F5)', 'error');
+      } else {
+        showSyncToast('Error: ' + error.message, 'error');
+      }
+    } finally {
+      resetSyncButton();
+    }
+  }
+
+  function resetSyncButton() {
+    isSyncing = false;
+    if (!syncButton) return;
+    syncButton.disabled = false;
+    syncButton.style.cursor = 'pointer';
+    syncButton.style.animation = 'none';
+    syncButton.style.color = '#9aa0a6';
+    syncButton.style.background = 'transparent';
+    const lang = getLang();
+    syncButton.title = lang === 'ru' ? 'Синхронизировать Google Drive источники' : 'Sync Google Drive sources';
+  }
+
+  function showSyncToast(message, type) {
+    // Remove existing toast
+    const existing = document.getElementById('nlm-sync-toast');
+    if (existing) existing.remove();
+
+    const toast = document.createElement('div');
+    toast.id = 'nlm-sync-toast';
+
+    const colors = {
+      success: { bg: 'rgba(52, 168, 83, 0.9)', border: 'rgba(52, 168, 83, 0.5)' },
+      error: { bg: 'rgba(234, 67, 53, 0.9)', border: 'rgba(234, 67, 53, 0.5)' },
+      info: { bg: 'rgba(66, 133, 244, 0.9)', border: 'rgba(66, 133, 244, 0.5)' }
+    };
+    const c = colors[type] || colors.info;
+
+    toast.textContent = message;
+    toast.style.cssText = `
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: ${c.bg};
+      color: #fff;
+      border: 1px solid ${c.border};
+      border-radius: 8px;
+      padding: 10px 20px;
+      font-size: 13px;
+      font-family: 'Google Sans', Roboto, sans-serif;
+      z-index: 99999;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      transition: opacity 0.3s ease;
+    `;
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      setTimeout(() => toast.remove(), 300);
+    }, 3000);
+  }
+
+  function setupSyncButton() {
+    if (!isSyncEnabled) return;
+    const notebookId = getNotebookId();
+    if (!notebookId) {
+      if (syncButton) syncButton.style.display = 'none';
+      return;
+    }
+
+    if (!syncButton) {
+      createSyncButton();
+    }
+
+    syncButton.style.display = 'flex';
+    insertSyncButton();
+  }
+
   // Watch for DOM changes (source selection changes)
   function startObserver() {
     if (observer) {
@@ -322,9 +563,8 @@
 
     // Skip if not on a notebook page
     if (!notebookId) {
-      if (deleteButton) {
-        deleteButton.style.display = 'none';
-      }
+      if (deleteButton) deleteButton.style.display = 'none';
+      if (syncButton) syncButton.style.display = 'none';
       return;
     }
 
@@ -335,23 +575,43 @@
 
     currentNotebookId = notebookId;
 
-    // Remove old button if exists
+    // Remove old buttons if exists
     if (deleteButton) {
       deleteButton.remove();
       deleteButton = null;
+    }
+    if (syncButton) {
+      syncButton.remove();
+      syncButton = null;
     }
 
     createDeleteButton();
     startObserver();
     setTimeout(updateButtonVisibility, 500);
+
+    // Setup sync button (with delay for DOM to be ready)
+    setTimeout(() => {
+      document.documentElement.setAttribute('data-nlm-sync-setup', 'fired');
+      setupSyncButton();
+      document.documentElement.setAttribute('data-nlm-sync-result', syncButton ? 'created-' + (syncButton.parentElement?.tagName || 'orphan') : 'null');
+    }, 800);
   }
 
   // Initialize
   async function init() {
-    const enabled = await checkEnabled();
-    if (!enabled) {
-      return;
-    }
+    // DOM marker for debugging — can be checked from page context
+    document.documentElement.setAttribute('data-nlm-ext', 'v3-sync');
+
+    // Check sync button setting
+    try {
+      const syncResult = await chrome.storage.sync.get(['enableSyncDrive']);
+      isSyncEnabled = syncResult.enableSyncDrive !== false; // Default to true
+    } catch (e) { /* default true */ }
+
+    document.documentElement.setAttribute('data-nlm-sync-enabled', String(isSyncEnabled));
+
+    await checkEnabled();
+    // Even if bulk delete is disabled, we still init for sync button
 
     // Initial setup
     if (document.readyState === 'loading') {
@@ -390,9 +650,17 @@
 
     // Listen for settings changes
     chrome.storage.onChanged.addListener((changes, namespace) => {
-      if (namespace === 'sync' && changes.enableBulkDelete) {
-        isEnabled = changes.enableBulkDelete.newValue !== false;
-        updateButtonVisibility();
+      if (namespace === 'sync') {
+        if (changes.enableBulkDelete) {
+          isEnabled = changes.enableBulkDelete.newValue !== false;
+          updateButtonVisibility();
+        }
+        if (changes.enableSyncDrive) {
+          isSyncEnabled = changes.enableSyncDrive.newValue !== false;
+          if (syncButton) {
+            syncButton.style.display = isSyncEnabled ? 'flex' : 'none';
+          }
+        }
       }
     });
 
