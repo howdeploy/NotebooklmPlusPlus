@@ -1,15 +1,36 @@
-# Add to NotebookLM
+<p align="center">
+  <img src="icons/icon128.png" alt="Add to NotebookLM" width="80">
+</p>
 
-Расширение Chrome для импорта YouTube видео и веб-страниц в Google NotebookLM.
+<h1 align="center">Add to NotebookLM</h1>
+
+<p align="center">
+  Chrome-расширение для удобной работы с Google NotebookLM.<br>
+  Добавляйте веб-страницы, YouTube-видео, комментарии и целые плейлисты в нотбуки — в один клик.
+</p>
+
+---
 
 ## Возможности
 
-- Добавление текущей страницы одним кликом
-- Импорт YouTube плейлистов и видео с каналов
+**Основное**
+- Добавление текущей страницы в нотбук одним кликом
+- **Захват страницы как PDF** — полный снимок страницы через Chrome Debugger API, загрузка в NotebookLM как PDF-источник
+- Создание новых нотбуков прямо из расширения
+
+**YouTube**
+- Добавление видео, плейлистов и каналов целиком
+- **Парсинг комментариев** — загрузка топ/новых комментариев с ответами, отправка в нотбук как текстовый источник
+
+**Инструменты**
 - Массовый импорт ссылок
 - Импорт открытых вкладок браузера
 - **Массовое удаление источников** из нотбука
-- Поддержка нескольких Google аккаунтов
+- **Синхронизация Google Drive-источников** (Docs, Sheets)
+
+**Настройки**
+- Поддержка нескольких Google-аккаунтов
+- Тёмная тема
 - Русский и английский интерфейс
 
 ## Установка
@@ -24,35 +45,62 @@
 
 1. Войдите в [NotebookLM](https://notebooklm.google.com)
 2. Нажмите на иконку расширения
-3. Выберите нотбук и нажмите «Добавить»
+3. Выберите нотбук и нажмите «Добавить в нотбук»
+
+### Добавление как PDF
+
+Кнопка «Добавить как PDF» делает полный снимок страницы и загружает его в NotebookLM как PDF-источник. Используйте для длинных статей и страниц с динамическим контентом, где обычное добавление по URL даёт неполный результат.
 
 ### YouTube
 
-- **Видео** — добавляет текущее видео
-- **Плейлист** — добавляет все видео из плейлиста
-- **Канал** — добавляет видимые видео с канала
+| Страница | Действие |
+|----------|----------|
+| Видео | Добавляет текущее видео |
+| Плейлист | Добавляет все видео из плейлиста |
+| Канал | Добавляет видимые видео с канала |
+| Видео (комментарии) | Парсит и отправляет комментарии в нотбук |
 
 ## Лицензия
 
 MIT — свободно используйте, модифицируйте и распространяйте.
 
-Если проект оказался полезен, буду благодарен за упоминание:
 **[@AndyShaman](https://github.com/AndyShaman)** · [add_to_NotebookLM](https://github.com/AndyShaman/add_to_NotebookLM)
 
 ---
 
-# Add to NotebookLM
+<p align="center">
+  <img src="icons/icon128.png" alt="Add to NotebookLM" width="80">
+</p>
 
-Chrome extension for importing YouTube videos and web pages into Google NotebookLM.
+<h1 align="center">Add to NotebookLM</h1>
+
+<p align="center">
+  Chrome extension for working with Google NotebookLM.<br>
+  Add web pages, YouTube videos, comments, and entire playlists to your notebooks — in one click.
+</p>
+
+---
 
 ## Features
 
-- Add current page with one click
-- Import YouTube playlists and channel videos
+**Core**
+- Add current page to a notebook with one click
+- **Capture page as PDF** — full page snapshot via Chrome Debugger API, uploaded to NotebookLM as a PDF source
+- Create new notebooks directly from the extension
+
+**YouTube**
+- Add videos, playlists, and entire channels
+- **Parse comments** — fetch top/newest comments with replies, send to notebook as text source
+
+**Tools**
 - Bulk import links
 - Import open browser tabs
 - **Bulk delete sources** from notebooks
+- **Sync Google Drive sources** (Docs, Sheets)
+
+**Settings**
 - Multiple Google account support
+- Dark mode
 - English and Russian interface
 
 ## Installation
@@ -67,17 +115,23 @@ Chrome extension for importing YouTube videos and web pages into Google Notebook
 
 1. Login to [NotebookLM](https://notebooklm.google.com)
 2. Click the extension icon
-3. Select a notebook and click "Add"
+3. Select a notebook and click "Add to Notebook"
+
+### Add as PDF
+
+The "Add as PDF" button captures a full page snapshot and uploads it to NotebookLM as a PDF source. Use it for long articles and dynamic pages where regular URL import captures incomplete content.
 
 ### YouTube
 
-- **Video** — adds current video
-- **Playlist** — adds all videos from playlist
-- **Channel** — adds visible channel videos
+| Page | Action |
+|------|--------|
+| Video | Adds current video |
+| Playlist | Adds all videos from playlist |
+| Channel | Adds visible channel videos |
+| Video (comments) | Parses and sends comments to notebook |
 
 ## License
 
 MIT — free to use, modify, and distribute.
 
-If you found this project useful, I'd appreciate a mention:
 **[@AndyShaman](https://github.com/AndyShaman)** · [add_to_NotebookLM](https://github.com/AndyShaman/add_to_NotebookLM)
