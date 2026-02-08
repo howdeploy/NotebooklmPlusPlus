@@ -645,7 +645,7 @@ async function loadSettings() {
       commentsModeSelect.value = localSettings.commentsMode || 'top';
     }
     if (commentsLimitSelect) {
-      commentsLimitSelect.value = String(localSettings.commentsLimit || 1000);
+      commentsLimitSelect.value = String(localSettings.commentsLimit ?? 1000);
     }
     // Show/hide limit group based on mode
     if (commentsLimitGroup) {

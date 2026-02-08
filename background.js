@@ -937,7 +937,7 @@ async function doParseComments(notebookId, videoId, tabId) {
     const includeReplies = settings.commentsIncludeReplies !== undefined ? settings.commentsIncludeReplies : (mode === 'top');
     // For 'top' mode: maxComments=0 (YouTube limits naturally to ~1000)
     // For 'newest' mode: use configured limit
-    const maxComments = mode === 'top' ? 0 : (settings.commentsLimit || 1000);
+    const maxComments = mode === 'top' ? 0 : (settings.commentsLimit ?? 1000);
 
     // Phase 2: Fetch comments via InnerTube API
     const comments = await YouTubeCommentsAPI.fetchAllComments(videoId, {
