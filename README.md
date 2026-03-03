@@ -41,8 +41,7 @@
 
 **Экспорт заметок**
 - Выбор заметок чекбоксами прямо в интерфейсе NotebookLM
-- Экспорт выбранных заметок через нативные контролы NotebookLM
-- Панель прогресса и результатов экспорта
+- Тихий экспорт на Google Drive без открытия новых вкладок
 
 **Настройки**
 - Несколько Google-аккаунтов
@@ -131,8 +130,7 @@ MIT
 
 **Note Export**
 - Select notes with checkboxes inside NotebookLM UI
-- Export selected notes via native NotebookLM controls
-- Progress and results panel
+- Silent export to Google Drive without opening new tabs
 
 **Settings**
 - Multiple Google accounts
