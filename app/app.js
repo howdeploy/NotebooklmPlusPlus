@@ -12,6 +12,8 @@ let statusDiv;
 let settingsAccountSelect, settingsLanguageSelect, autoOpenNotebook, enableBulkDelete;
 let commentsModeSelect, commentsLimitSelect, commentsLimitGroup, commentsIncludeReplies;
 let themeToggle;
+let settingsExportAuthBadge, settingsExportAuthStatus, settingsExportAuthMeta;
+let settingsExportAuthBtn, settingsClearExportAuthBtn;
 
 // State
 let notebooks = [];
@@ -55,6 +57,11 @@ async function init() {
   commentsLimitGroup = document.getElementById('comments-limit-group');
   commentsIncludeReplies = document.getElementById('comments-include-replies');
   themeToggle = document.getElementById('theme-toggle');
+  settingsExportAuthBadge = document.getElementById('settings-export-auth-badge');
+  settingsExportAuthStatus = document.getElementById('settings-export-auth-status');
+  settingsExportAuthMeta = document.getElementById('settings-export-auth-meta');
+  settingsExportAuthBtn = document.getElementById('settings-export-auth-btn');
+  settingsClearExportAuthBtn = document.getElementById('settings-clear-export-auth-btn');
 
   // Set up event listeners
   document.querySelectorAll('.tab').forEach(tab => {
@@ -99,6 +106,17 @@ async function init() {
       }
     });
   }
+  if (settingsExportAuthBtn) {
+    settingsExportAuthBtn.addEventListener('click', handleBeginExportAuth);
+  }
+  if (settingsClearExportAuthBtn) {
+    settingsClearExportAuthBtn.addEventListener('click', handleClearExportAuth);
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && currentTab === 'settings') {
+      loadExportAuthStatus();
+    }
+  });
 
   // Check URL hash for initial tab
   if (location.hash === '#tabs') {
@@ -149,6 +167,10 @@ function switchTab(tabName) {
   if (tabName === 'settings') {
     loadSettings();
   }
+}
+
+function t(key, fallback) {
+  return I18n ? (I18n.get(key) || fallback || key) : (fallback || key);
 }
 
 // Load notebooks
@@ -564,6 +586,110 @@ function hideStatus() {
   statusDiv.className = 'status';
 }
 
+function getExportAuthMessage(response) {
+  if (response?.messageKey) {
+    return t(response.messageKey, response.messageKey);
+  }
+  return t('settings_exportAuthMissing', 'Google export access is not connected yet.');
+}
+
+function getExportAuthMeta(response) {
+  const scopes = response?.grantedScopes || response?.status?.grantedScopes || [];
+  if (Array.isArray(scopes) && scopes.length > 0) {
+    return `${t('settings_exportAuthScopes', 'Granted scopes')}: ${scopes.join(', ')}`;
+  }
+  return '';
+}
+
+function renderExportAuthState(response, options = {}) {
+  if (!settingsExportAuthBadge || !settingsExportAuthStatus || !settingsExportAuthBtn || !settingsClearExportAuthBtn) {
+    return;
+  }
+
+  if (options.loading) {
+    settingsExportAuthBadge.className = 'auth-pill';
+    settingsExportAuthBadge.textContent = t('popup_exportAuthMissing', 'Not connected');
+    settingsExportAuthStatus.textContent = options.message || t('settings_exportAuthLoading', 'Checking export authorization...');
+    settingsExportAuthMeta.textContent = '';
+    settingsExportAuthBtn.disabled = true;
+    settingsClearExportAuthBtn.disabled = true;
+    return;
+  }
+
+  const hasError = Boolean(response?.lastError && response.lastError !== 'not_authorized');
+  const authorized = Boolean(response?.authorized);
+
+  settingsExportAuthBadge.className = 'auth-pill';
+  if (authorized) {
+    settingsExportAuthBadge.classList.add('authorized');
+    settingsExportAuthBadge.textContent = t('popup_exportAuthConnected', 'Connected');
+  } else if (hasError) {
+    settingsExportAuthBadge.classList.add('error');
+    settingsExportAuthBadge.textContent = t('popup_exportAuthFailed', 'Needs attention');
+  } else {
+    settingsExportAuthBadge.textContent = t('popup_exportAuthMissing', 'Not connected');
+  }
+
+  settingsExportAuthStatus.textContent = getExportAuthMessage(response);
+  settingsExportAuthMeta.textContent = getExportAuthMeta(response);
+  settingsExportAuthBtn.disabled = authorized;
+  settingsClearExportAuthBtn.disabled = !authorized && !hasError;
+}
+
+async function loadExportAuthStatus() {
+  renderExportAuthState(null, {
+    loading: true,
+    message: t('settings_exportAuthLoading', 'Checking export authorization...')
+  });
+
+  try {
+    const response = await sendMessage({ cmd: 'get-export-auth-status' });
+    renderExportAuthState(response);
+  } catch (error) {
+    renderExportAuthState({
+      authorized: false,
+      lastError: 'identity_flow_failed',
+      messageKey: 'exportAuthErrorIdentityFlowFailed'
+    });
+  }
+}
+
+async function handleBeginExportAuth() {
+  renderExportAuthState(null, {
+    loading: true,
+    message: t('settings_exportAuthWorking', 'Opening Google authorization...')
+  });
+
+  try {
+    const response = await sendMessage({ cmd: 'begin-export-auth' });
+    renderExportAuthState(response);
+  } catch (error) {
+    renderExportAuthState({
+      authorized: false,
+      lastError: 'identity_flow_failed',
+      messageKey: 'exportAuthErrorIdentityFlowFailed'
+    });
+  }
+}
+
+async function handleClearExportAuth() {
+  renderExportAuthState(null, {
+    loading: true,
+    message: t('settings_exportAuthClearing', 'Clearing Google authorization...')
+  });
+
+  try {
+    const response = await sendMessage({ cmd: 'clear-export-auth' });
+    renderExportAuthState(response);
+  } catch (error) {
+    renderExportAuthState({
+      authorized: false,
+      lastError: 'identity_flow_failed',
+      messageKey: 'exportAuthErrorIdentityFlowFailed'
+    });
+  }
+}
+
 // Send message to background script
 function sendMessage(message) {
   return new Promise((resolve, reject) => {
@@ -658,6 +784,8 @@ async function loadSettings() {
         ? localSettings.commentsIncludeReplies
         : (mode === 'top');
     }
+
+    await loadExportAuthStatus();
 
   } catch (error) {
     console.error('Error loading settings:', error);

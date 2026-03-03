@@ -560,6 +560,77 @@
       border-top: 1px solid var(--border-subtle);
     }
 
+    .auth-settings-card {
+      padding: 18px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-input);
+      margin-top: 16px;
+    }
+
+    .auth-settings-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .auth-settings-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .auth-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 5px 10px;
+      border-radius: var(--radius-pill);
+      font-size: 12px;
+      font-weight: 700;
+      background: rgba(255, 149, 0, 0.16);
+      color: var(--accent-warning);
+      white-space: nowrap;
+    }
+
+    .auth-pill.authorized {
+      background: rgba(52, 199, 89, 0.16);
+      color: var(--accent-success);
+    }
+
+    .auth-pill.error {
+      background: rgba(255, 59, 48, 0.16);
+      color: var(--accent-error);
+    }
+
+    .auth-settings-copy {
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+    }
+
+    .auth-settings-status {
+      font-size: 14px;
+      line-height: 1.5;
+      color: var(--text-primary);
+      margin-bottom: 10px;
+    }
+
+    .auth-settings-meta {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+    }
+
+    .auth-settings-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
     .checkbox-label {
       display: flex;
       align-items: center;
@@ -845,6 +916,24 @@ https://notion.so/page
           <option value="0">Loading accounts...</option>
         </select>
         <div class="link-count" data-i18n="settings_accountHint">Select which Google account to use for NotebookLM</div>
+      </div>
+
+      <div class="auth-settings-card">
+        <div class="auth-settings-header">
+          <div class="auth-settings-title" data-i18n="settings_exportAuthTitle">Google export authorization</div>
+          <div id="settings-export-auth-badge" class="auth-pill" data-i18n="popup_exportAuthMissing">Not connected</div>
+        </div>
+        <div class="auth-settings-copy" data-i18n="settings_exportAuthHint">Authorize the separate Google access required for future export features. NotebookLM account selection above still applies only to imports.</div>
+        <div id="settings-export-auth-status" class="auth-settings-status" data-i18n="settings_exportAuthLoading">Checking export authorization...</div>
+        <div id="settings-export-auth-meta" class="auth-settings-meta"></div>
+        <div class="auth-settings-actions">
+          <button id="settings-export-auth-btn" class="btn btn-secondary" type="button">
+            <span data-i18n="settings_exportAuthAction">Authorize Google Export</span>
+          </button>
+          <button id="settings-clear-export-auth-btn" class="btn btn-secondary" type="button">
+            <span data-i18n="settings_exportAuthClear">Clear Authorization</span>
+          </button>
+        </div>
       </div>
 
       <div class="form-group">

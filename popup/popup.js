@@ -20,6 +20,7 @@ let notebookSelect, addBtn, addPdfBtn, newNotebookBtn, bulkBtn, tabsBtn;
 let accountSelect, statusDiv, currentUrlDiv, settingsBtn, openNotebookBtn;
 let newNotebookModal, newNotebookInput, modalCancel, modalCreate;
 let parseCommentsBtn, parseProgress, parseProgressText, cancelParseBtn;
+let exportAuthBadge, exportAuthStatus, exportAuthBtn, clearExportAuthBtn;
 
 // Current state
 let currentTab = null;
@@ -54,6 +55,10 @@ async function init() {
   parseProgress = document.getElementById('parse-progress');
   parseProgressText = document.getElementById('parse-progress-text');
   cancelParseBtn = document.getElementById('cancel-parse-btn');
+  exportAuthBadge = document.getElementById('export-auth-badge');
+  exportAuthStatus = document.getElementById('export-auth-status');
+  exportAuthBtn = document.getElementById('export-auth-btn');
+  clearExportAuthBtn = document.getElementById('clear-export-auth-btn');
 
   // Set up event listeners
   addBtn.addEventListener('click', handleAddToNotebook);
@@ -69,11 +74,17 @@ async function init() {
   modalCreate.addEventListener('click', handleCreateNotebook);
   settingsBtn.addEventListener('click', openSettings);
   openNotebookBtn.addEventListener('click', handleOpenNotebook);
+  exportAuthBtn.addEventListener('click', handleBeginExportAuth);
+  clearExportAuthBtn.addEventListener('click', handleClearExportAuth);
+  window.addEventListener('focus', () => {
+    loadExportAuthStatus();
+  });
 
   // Load initial data
   await loadCurrentTab();
   await loadAccounts();
   await loadNotebooks();
+  await loadExportAuthStatus();
   await checkActiveParse();
 }
 
@@ -83,6 +94,100 @@ function t(key, fallback) {
     return I18n.get(key) || fallback || key;
   }
   return fallback || key;
+}
+
+function getExportAuthMessage(response) {
+  if (response?.messageKey) {
+    return t(response.messageKey, response.messageKey);
+  }
+  return t('popup_exportAuthMissing', 'Not connected');
+}
+
+function renderExportAuthState(response, options = {}) {
+  if (!exportAuthBadge || !exportAuthStatus || !exportAuthBtn || !clearExportAuthBtn) {
+    return;
+  }
+
+  if (options.loading) {
+    exportAuthBadge.className = 'auth-badge';
+    exportAuthBadge.textContent = t('popup_exportAuthMissing', 'Not connected');
+    exportAuthStatus.textContent = options.message || t('popup_exportAuthLoading', 'Checking export authorization...');
+    exportAuthBtn.disabled = true;
+    clearExportAuthBtn.disabled = true;
+    return;
+  }
+
+  const hasError = Boolean(response?.lastError && response.lastError !== 'not_authorized');
+  const authorized = Boolean(response?.authorized);
+
+  exportAuthBadge.className = 'auth-badge';
+  if (authorized) {
+    exportAuthBadge.classList.add('authorized');
+    exportAuthBadge.textContent = t('popup_exportAuthConnected', 'Connected');
+  } else if (hasError) {
+    exportAuthBadge.classList.add('error');
+    exportAuthBadge.textContent = t('popup_exportAuthFailed', 'Needs attention');
+  } else {
+    exportAuthBadge.textContent = t('popup_exportAuthMissing', 'Not connected');
+  }
+
+  exportAuthStatus.textContent = getExportAuthMessage(response);
+  exportAuthBtn.disabled = authorized;
+  clearExportAuthBtn.disabled = !authorized && !hasError;
+}
+
+async function loadExportAuthStatus() {
+  renderExportAuthState(null, {
+    loading: true,
+    message: t('popup_exportAuthLoading', 'Checking export authorization...')
+  });
+
+  try {
+    const response = await sendMessage({ cmd: 'get-export-auth-status' });
+    renderExportAuthState(response);
+  } catch (error) {
+    renderExportAuthState({
+      authorized: false,
+      lastError: 'identity_flow_failed',
+      messageKey: 'exportAuthErrorIdentityFlowFailed'
+    });
+  }
+}
+
+async function handleBeginExportAuth() {
+  renderExportAuthState(null, {
+    loading: true,
+    message: t('popup_exportAuthWorking', 'Opening Google authorization...')
+  });
+
+  try {
+    const response = await sendMessage({ cmd: 'begin-export-auth' });
+    renderExportAuthState(response);
+  } catch (error) {
+    renderExportAuthState({
+      authorized: false,
+      lastError: 'identity_flow_failed',
+      messageKey: 'exportAuthErrorIdentityFlowFailed'
+    });
+  }
+}
+
+async function handleClearExportAuth() {
+  renderExportAuthState(null, {
+    loading: true,
+    message: t('popup_exportAuthClearing', 'Clearing Google authorization...')
+  });
+
+  try {
+    const response = await sendMessage({ cmd: 'clear-export-auth' });
+    renderExportAuthState(response);
+  } catch (error) {
+    renderExportAuthState({
+      authorized: false,
+      lastError: 'identity_flow_failed',
+      messageKey: 'exportAuthErrorIdentityFlowFailed'
+    });
+  }
 }
 
 // Load current tab info

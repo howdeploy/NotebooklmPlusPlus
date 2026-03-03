@@ -135,6 +135,88 @@
       background: var(--bg-card-hover);
     }
 
+    .auth-panel {
+      background: var(--bg-card);
+      backdrop-filter: blur(var(--blur-card));
+      -webkit-backdrop-filter: blur(var(--blur-card));
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-card);
+      padding: 12px;
+      margin-bottom: 10px;
+    }
+
+    .auth-panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .auth-panel-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .auth-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 8px;
+      border-radius: var(--radius-pill);
+      font-size: 11px;
+      font-weight: 700;
+      background: rgba(255, 149, 0, 0.16);
+      color: var(--accent-warning);
+    }
+
+    .auth-badge.authorized {
+      background: rgba(52, 199, 89, 0.16);
+      color: var(--accent-success);
+    }
+
+    .auth-badge.error {
+      background: rgba(255, 59, 48, 0.16);
+      color: var(--accent-error);
+    }
+
+    .auth-panel-copy {
+      font-size: 12px;
+      line-height: 1.45;
+      color: var(--text-secondary);
+      margin-bottom: 10px;
+    }
+
+    .auth-panel-status {
+      font-size: 13px;
+      line-height: 1.45;
+      color: var(--text-primary);
+      margin-bottom: 10px;
+    }
+
+    .auth-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .auth-actions .btn {
+      margin-bottom: 0;
+      font-size: 12px;
+      padding: 10px 12px;
+      border-radius: var(--radius-md);
+    }
+
+    .helper-copy {
+      font-size: 11px;
+      color: var(--text-muted);
+      line-height: 1.4;
+      margin: -2px 0 10px;
+    }
+
     .current-page-title {
       font-size: 11px;
       font-weight: 500;
@@ -537,6 +619,7 @@
 
   <!-- Notebook selector -->
   <div class="section-label" data-i18n="popup_selectNotebook">Add to notebook:</div>
+  <div class="helper-copy" data-i18n="popup_notebookBoundary">Notebook and account selection below still control NotebookLM imports. Google export authorization is configured separately.</div>
   <div class="notebook-row">
     <select id="notebook-select" class="notebook-select">
       <option value="" data-i18n="popup_loadingNotebooks">Loading notebooks...</option>
@@ -568,6 +651,23 @@
   <button id="new-notebook-btn" class="btn btn-secondary">
     <span>📔</span> <span data-i18n="popup_createNotebook">Create New Notebook</span>
   </button>
+
+  <div class="auth-panel">
+    <div class="auth-panel-header">
+      <div class="auth-panel-title" data-i18n="popup_exportAuthTitle">Google export authorization</div>
+      <div id="export-auth-badge" class="auth-badge" data-i18n="popup_exportAuthMissing">Not connected</div>
+    </div>
+    <div class="auth-panel-copy" data-i18n="popup_exportAuthHint">Use this once to connect the Google authorization needed for future exports. It does not change your NotebookLM import account.</div>
+    <div id="export-auth-status" class="auth-panel-status" data-i18n="popup_exportAuthLoading">Checking export authorization...</div>
+    <div class="auth-actions">
+      <button id="export-auth-btn" class="btn btn-secondary" type="button">
+        <span data-i18n="popup_exportAuthAction">Authorize Google Export</span>
+      </button>
+      <button id="clear-export-auth-btn" class="btn btn-secondary" type="button">
+        <span data-i18n="popup_exportAuthClear">Clear Authorization</span>
+      </button>
+    </div>
+  </div>
 
   <div class="divider"></div>
 

@@ -15,6 +15,10 @@
     "message": "Your current import tools remain available here.",
     "description": "Popup continuity line"
   },
+  "popup_notebookBoundary": {
+    "message": "Notebook and account selection below still control NotebookLM imports. Google export authorization is configured separately.",
+    "description": "Popup copy clarifying NotebookLM import vs export auth"
+  },
   "popup_currentPage": {
     "message": "Current page:",
     "description": "Current page label"
@@ -82,6 +86,46 @@
   "popup_tools": {
     "message": "Tools:",
     "description": "Tools section label"
+  },
+  "popup_exportAuthTitle": {
+    "message": "Google export authorization",
+    "description": "Popup export auth section title"
+  },
+  "popup_exportAuthHint": {
+    "message": "Use this once to connect the Google authorization needed for future exports. It does not change your NotebookLM import account.",
+    "description": "Popup export auth hint"
+  },
+  "popup_exportAuthConnected": {
+    "message": "Connected",
+    "description": "Popup export auth connected badge"
+  },
+  "popup_exportAuthMissing": {
+    "message": "Not connected",
+    "description": "Popup export auth missing badge"
+  },
+  "popup_exportAuthFailed": {
+    "message": "Needs attention",
+    "description": "Popup export auth failed badge"
+  },
+  "popup_exportAuthAction": {
+    "message": "Authorize Google Export",
+    "description": "Popup export auth primary action"
+  },
+  "popup_exportAuthClear": {
+    "message": "Clear Authorization",
+    "description": "Popup export auth clear action"
+  },
+  "popup_exportAuthLoading": {
+    "message": "Checking export authorization...",
+    "description": "Popup export auth loading state"
+  },
+  "popup_exportAuthWorking": {
+    "message": "Opening Google authorization...",
+    "description": "Popup export auth start loading state"
+  },
+  "popup_exportAuthClearing": {
+    "message": "Clearing Google authorization...",
+    "description": "Popup export auth clear loading state"
   },
   "popup_openNotebook": {
     "message": "Open Notebook",
@@ -256,8 +300,52 @@
     "description": "Account setting label"
   },
   "settings_accountHint": {
-    "message": "Select which Google account to use for NotebookLM",
+    "message": "Select which Google account to use for NotebookLM imports. This does not control Google export authorization below.",
     "description": "Account setting hint"
+  },
+  "settings_exportAuthTitle": {
+    "message": "Google export authorization",
+    "description": "Settings export auth section title"
+  },
+  "settings_exportAuthHint": {
+    "message": "Authorize the separate Google access required for future export features. NotebookLM account selection above still applies only to imports.",
+    "description": "Settings export auth hint"
+  },
+  "settings_exportAuthConnected": {
+    "message": "Google export access is connected.",
+    "description": "Settings export auth connected status"
+  },
+  "settings_exportAuthMissing": {
+    "message": "Google export access is not connected yet.",
+    "description": "Settings export auth missing status"
+  },
+  "settings_exportAuthFailed": {
+    "message": "Google export authorization needs attention.",
+    "description": "Settings export auth failed status"
+  },
+  "settings_exportAuthAction": {
+    "message": "Authorize Google Export",
+    "description": "Settings export auth action"
+  },
+  "settings_exportAuthClear": {
+    "message": "Clear Authorization",
+    "description": "Settings export auth clear action"
+  },
+  "settings_exportAuthScopes": {
+    "message": "Granted scopes",
+    "description": "Settings export auth granted scopes label"
+  },
+  "settings_exportAuthLoading": {
+    "message": "Checking export authorization...",
+    "description": "Settings export auth loading state"
+  },
+  "settings_exportAuthWorking": {
+    "message": "Opening Google authorization...",
+    "description": "Settings export auth start loading state"
+  },
+  "settings_exportAuthClearing": {
+    "message": "Clearing Google authorization...",
+    "description": "Settings export auth clear loading state"
   },
   "settings_autoOpen": {
     "message": "Auto-open notebook after adding sources",
