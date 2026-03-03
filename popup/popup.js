@@ -1,4 +1,4 @@
-// Popup script for Add to NotebookLM
+// Popup script for NotebookLM++
 
 // Initialize theme immediately (before DOMContentLoaded)
 (async function initThemeEarly() {
@@ -31,6 +31,7 @@ async function init() {
   // Initialize localization first
   if (window.I18n) {
     await I18n.init();
+    document.title = t('popup_title', 'NotebookLM++');
   }
 
   // Get DOM elements

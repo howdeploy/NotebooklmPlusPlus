@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Add to NotebookLM</title>
+  <title data-i18n="app_title">NotebookLM++</title>
   <style>
     /* ===== CSS Variables - Light Theme ===== */
     :root {
@@ -113,6 +113,17 @@
       color: var(--text-secondary);
       font-size: 15px;
       margin-top: 4px;
+    }
+
+    .header-copy {
+      max-width: 560px;
+    }
+
+    .continuity-note {
+      color: var(--text-muted);
+      font-size: 13px;
+      line-height: 1.5;
+      margin-top: 8px;
     }
 
     /* ===== Tabs ===== */
@@ -734,9 +745,10 @@
   <div class="container">
     <div class="header">
       <img src="../icons/icon48.png" alt="NotebookLM">
-      <div>
-        <h1>📔 <span data-i18n="app_title">Add to NotebookLM</span></h1>
-        <p data-i18n="app_description">Your toolkit for working with NotebookLM</p>
+      <div class="header-copy">
+        <h1>📔 <span data-i18n="app_title">NotebookLM++</span></h1>
+        <p data-i18n="app_description">Companion tools for NotebookLM import workflows</p>
+        <p class="continuity-note" data-i18n="app_continuity">The current import tools remain available and ready to use.</p>
       </div>
     </div>
 
@@ -887,10 +899,10 @@ https://notion.so/page
       <div class="settings-section">
         <div class="card-title">ℹ️ <span data-i18n="settings_about">About</span></div>
         <div class="about-info" data-i18n="settings_aboutText">
-          Chrome extension for importing YouTube videos, playlists, channels, web pages and comments into Google NotebookLM. Supports bulk import and multiple Google accounts.
+          NotebookLM++ is a Chrome extension companion for importing YouTube videos, playlists, channels, web pages, and comments into NotebookLM. It keeps the existing bulk import and multi-account workflows available.
         </div>
         <div class="about-version">
-          <strong>Add to NotebookLM</strong> v1.1.0
+          <strong>NotebookLM++</strong> v1.1.0
         </div>
 
         <div class="social-links">

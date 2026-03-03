@@ -1,4 +1,4 @@
-// Bulk Import App for Add to NotebookLM
+// Bulk Import App for NotebookLM++
 
 document.addEventListener('DOMContentLoaded', init);
 
@@ -26,6 +26,7 @@ async function init() {
   // Initialize localization first
   if (window.I18n) {
     await I18n.init();
+    document.title = I18n.get('app_title') || 'NotebookLM++';
   }
 
   // Get DOM elements

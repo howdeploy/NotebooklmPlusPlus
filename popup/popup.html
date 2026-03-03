@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Add to NotebookLM</title>
+  <title data-i18n="popup_title">NotebookLM++</title>
   <style>
     /* ===== CSS Variables - Light Theme ===== */
     :root {
@@ -104,6 +104,18 @@
       font-weight: 600;
       color: var(--text-primary);
       letter-spacing: -0.3px;
+    }
+
+    .header-copy {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .continuity-note {
+      font-size: 11px;
+      color: var(--text-secondary);
+      line-height: 1.4;
     }
 
     /* ===== Cards (Glassmorphism) ===== */
@@ -508,7 +520,10 @@
 <body>
   <div class="header">
     <img src="../icons/icon32.png" alt="NotebookLM">
-    <h1>Add to NotebookLM</h1>
+    <div class="header-copy">
+      <h1 data-i18n="popup_title">NotebookLM++</h1>
+      <p class="continuity-note" data-i18n="popup_continuity">Your current import tools remain available here.</p>
+    </div>
   </div>
 
   <!-- Status messages -->
