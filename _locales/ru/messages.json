@@ -1,11 +1,19 @@
 {
   "extName": {
-    "message": "Add to NotebookLM",
+    "message": "NotebookLM++",
     "description": "Название расширения"
   },
   "extDescription": {
     "message": "Импортируйте YouTube видео и веб-страницы в NotebookLM одним кликом. Массовый импорт, поддержка плейлистов и многое другое.",
     "description": "Описание расширения"
+  },
+  "popup_title": {
+    "message": "NotebookLM++",
+    "description": "Заголовок попапа"
+  },
+  "popup_continuity": {
+    "message": "Ваши текущие инструменты импорта доступны здесь.",
+    "description": "Описание в попапе"
   },
   "popup_currentPage": {
     "message": "Текущая страница:",
@@ -128,12 +136,44 @@
     "description": "Метка канала"
   },
   "app_title": {
-    "message": "Add to NotebookLM",
+    "message": "NotebookLM++",
     "description": "Заголовок страницы приложения"
   },
   "app_description": {
-    "message": "Ваш набор инструментов для работы с NotebookLM",
+    "message": "Набор инструментов-компаньонов для NotebookLM",
     "description": "Описание страницы приложения"
+  },
+  "noteExportAction": {
+    "message": "NotebookLM++ Экспорт",
+    "description": "Метка действия экспорта заметок"
+  },
+  "noteExportSelect": {
+    "message": "Выбрать заметку для экспорта NotebookLM++",
+    "description": "Метка чекбокса выбора заметки"
+  },
+  "noteExportSelected": {
+    "message": "выбрано",
+    "description": "Суффикс количества выбранных заметок"
+  },
+  "noteExportBadge": {
+    "message": "Экспорт",
+    "description": "Бейдж выбора заметки"
+  },
+  "noteExportReady": {
+    "message": "Выбор сохранён для экспорта",
+    "description": "Сообщение о сохранении выбора для экспорта"
+  },
+  "noteExportEmpty": {
+    "message": "Сначала выберите хотя бы одну заметку",
+    "description": "Сообщение об отсутствии выбора"
+  },
+  "noteExportUnavailable": {
+    "message": "Пока не найдены заметки для экспорта",
+    "description": "Сообщение об отсутствии экспортируемых заметок"
+  },
+  "noteExportQueued": {
+    "message": "Готово для Phase 3 export pipeline",
+    "description": "Сообщение о handoff-границе фазы 2"
   },
   "bulk_title": {
     "message": "Массовый импорт",
@@ -220,7 +260,7 @@
     "description": "Метка выбора аккаунта"
   },
   "settings_accountHint": {
-    "message": "Выберите аккаунт Google для NotebookLM",
+    "message": "Выберите аккаунт Google для NotebookLM в текущей сессии браузера",
     "description": "Подсказка выбора аккаунта"
   },
   "settings_autoOpen": {

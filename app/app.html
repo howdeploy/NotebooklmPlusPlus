@@ -5,65 +5,67 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title data-i18n="app_title">NotebookLM++</title>
   <style>
-    /* ===== CSS Variables - Light Theme ===== */
+    /* ===== CSS Variables - Catppuccin Latte (Light) ===== */
     :root {
       /* Backgrounds */
-      --bg-body: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
-      --bg-card: rgba(255, 255, 255, 0.7);
-      --bg-card-hover: rgba(255, 255, 255, 0.85);
-      --bg-input: rgba(255, 255, 255, 0.9);
-
-      /* Blur */
-      --blur-card: 20px;
+      --bg-body: #eff1f5;
+      --bg-card: #e6e9ef;
+      --bg-card-hover: #dce0e8;
+      --bg-input: #ccd0da;
 
       /* Borders */
-      --border-subtle: rgba(255, 255, 255, 0.5);
-      --border-input: rgba(0, 0, 0, 0.1);
+      --border-subtle: #bcc0cc;
+      --border-input: #acb0be;
 
       /* Text */
-      --text-primary: #1d1d1f;
-      --text-secondary: #6e6e73;
-      --text-muted: #86868b;
+      --text-primary: #4c4f69;
+      --text-secondary: #5c5f77;
+      --text-muted: #6c6f85;
 
       /* Accent */
-      --accent-primary: #007AFF;
-      --accent-primary-hover: #0056CC;
-      --accent-success: #34C759;
-      --accent-error: #FF3B30;
-      --accent-warning: #FF9500;
+      --accent-primary: #1e66f5;
+      --accent-primary-hover: #1252d9;
+      --accent-success: #40a02b;
+      --accent-error: #d20f39;
+      --accent-warning: #df8e1d;
 
       /* Shadows */
-      --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.08);
-      --shadow-button: 0 4px 16px rgba(0, 122, 255, 0.3);
-      --shadow-button-hover: 0 6px 20px rgba(0, 122, 255, 0.4);
+      --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.06);
+      --shadow-button: none;
+      --shadow-button-hover: none;
 
       /* Radius */
-      --radius-sm: 8px;
-      --radius-md: 12px;
-      --radius-lg: 16px;
-      --radius-xl: 24px;
-      --radius-pill: 50px;
+      --radius-sm: 6px;
+      --radius-md: 8px;
+      --radius-lg: 10px;
+      --radius-xl: 12px;
 
       /* Transitions */
       --transition-fast: 0.2s ease;
       --transition-normal: 0.3s ease;
     }
 
-    /* ===== Dark Theme ===== */
+    /* ===== Dark Theme - Catppuccin Mocha ===== */
     [data-theme="dark"] {
-      --bg-body: linear-gradient(135deg, #1c1c1e 0%, #2c2c2e 100%);
-      --bg-card: rgba(44, 44, 46, 0.7);
-      --bg-card-hover: rgba(58, 58, 60, 0.8);
-      --bg-input: rgba(44, 44, 46, 0.9);
+      --bg-body: #1e1e2e;
+      --bg-card: #313244;
+      --bg-card-hover: #45475a;
+      --bg-input: #313244;
 
-      --border-subtle: rgba(255, 255, 255, 0.1);
-      --border-input: rgba(255, 255, 255, 0.15);
+      --border-subtle: #45475a;
+      --border-input: #585b70;
 
-      --text-primary: #f5f5f7;
-      --text-secondary: #a1a1a6;
-      --text-muted: #6e6e73;
+      --text-primary: #cdd6f4;
+      --text-secondary: #a6adc8;
+      --text-muted: #6c7086;
 
-      --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.3);
+      --accent-primary: #89b4fa;
+      --accent-primary-hover: #b4befe;
+      --accent-success: #a6e3a1;
+      --accent-error: #f38ba8;
+      --accent-warning: #f9e2af;
+
+      --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.3);
     }
 
     /* ===== Base Styles ===== */
@@ -74,7 +76,7 @@
     }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      font-family: 'Fira Code', 'Google Sans', Roboto, monospace;
       background: var(--bg-body);
       background-attachment: fixed;
       color: var(--text-primary);
@@ -133,11 +135,8 @@
       margin-bottom: 24px;
       padding: 6px;
       background: var(--bg-card);
-      backdrop-filter: blur(var(--blur-card));
-      -webkit-backdrop-filter: blur(var(--blur-card));
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-lg);
-      box-shadow: var(--shadow-card);
     }
 
     .tab {
@@ -159,19 +158,15 @@
     }
 
     .tab.active {
-      color: #fff;
+      color: #1e1e2e;
       background: var(--accent-primary);
-      box-shadow: var(--shadow-button);
     }
 
-    /* ===== Cards (Glassmorphism) ===== */
+    /* ===== Cards ===== */
     .card {
       background: var(--bg-card);
-      backdrop-filter: blur(var(--blur-card));
-      -webkit-backdrop-filter: blur(var(--blur-card));
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-xl);
-      box-shadow: var(--shadow-card);
       padding: 24px;
       margin-bottom: 24px;
     }
@@ -213,20 +208,19 @@
       cursor: pointer;
       transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
       appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236e6e73' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236c6f85' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
       background-repeat: no-repeat;
       background-position: right 14px center;
       padding-right: 36px;
     }
 
     [data-theme="dark"] .form-select {
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a1a1a6' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a6adc8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
     }
 
     .form-select:focus {
       outline: none;
       border-color: var(--accent-primary);
-      box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.15);
     }
 
     .form-textarea {
@@ -234,7 +228,7 @@
       min-height: 200px;
       padding: 14px 16px;
       font-size: 14px;
-      font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
+      font-family: 'Fira Code', monospace;
       border: 1px solid var(--border-input);
       border-radius: var(--radius-md);
       background: var(--bg-input);
@@ -246,7 +240,6 @@
     .form-textarea:focus {
       outline: none;
       border-color: var(--accent-primary);
-      box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.15);
     }
 
     .form-textarea::placeholder {
@@ -259,57 +252,46 @@
       font-size: 14px;
       font-weight: 600;
       border: none;
-      border-radius: var(--radius-pill);
+      border-radius: var(--radius-md);
       cursor: pointer;
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      transition: transform var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast), opacity var(--transition-fast);
+      transition: background var(--transition-fast), opacity var(--transition-fast);
     }
 
     .btn:disabled {
       opacity: 0.5;
       cursor: not-allowed;
-      transform: none !important;
-      box-shadow: none !important;
     }
 
     .btn-primary {
       background: var(--accent-primary);
-      color: #fff;
-      box-shadow: var(--shadow-button);
+      color: #1e1e2e;
     }
 
     .btn-primary:hover:not(:disabled) {
       background: var(--accent-primary-hover);
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-button-hover);
     }
 
     .btn-secondary {
-      background: var(--bg-card);
-      backdrop-filter: blur(var(--blur-card));
-      -webkit-backdrop-filter: blur(var(--blur-card));
+      background: transparent;
       color: var(--accent-primary);
       border: 1px solid var(--border-subtle);
-      box-shadow: var(--shadow-card);
     }
 
     .btn-secondary:hover:not(:disabled) {
       background: var(--bg-card-hover);
-      transform: translateY(-2px);
     }
 
     .btn-danger {
-      background: var(--accent-error);
-      color: #fff;
-      box-shadow: 0 4px 16px rgba(255, 59, 48, 0.3);
+      background: rgba(243, 139, 168, 0.12);
+      color: var(--accent-error);
+      border: 1px solid rgba(243, 139, 168, 0.25);
     }
 
     .btn-danger:hover:not(:disabled) {
-      background: #e02020;
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(255, 59, 48, 0.4);
+      background: rgba(243, 139, 168, 0.2);
     }
 
     .btn-block {
@@ -351,7 +333,7 @@
     }
 
     .tab-item.selected {
-      background: rgba(0, 122, 255, 0.1);
+      background: rgba(137, 180, 250, 0.1);
     }
 
     .tab-item input[type="checkbox"] {
@@ -408,7 +390,7 @@
     }
 
     .source-item.selected {
-      background: rgba(255, 59, 48, 0.1);
+      background: rgba(243, 139, 168, 0.1);
     }
 
     .source-item input[type="checkbox"] {
@@ -476,7 +458,7 @@
 
     .progress-fill {
       height: 100%;
-      background: linear-gradient(90deg, var(--accent-primary), #5AC8FA);
+      background: linear-gradient(90deg, var(--accent-primary), #74c7ec);
       width: 0%;
       transition: width 0.3s ease;
       border-radius: 4px;
@@ -500,8 +482,6 @@
       font-weight: 500;
       display: none;
       z-index: 1000;
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
       max-width: 90%;
       text-align: center;
     }
@@ -523,21 +503,21 @@
     }
 
     .status.success {
-      background: rgba(52, 199, 89, 0.9);
-      color: #fff;
-      box-shadow: 0 8px 32px rgba(52, 199, 89, 0.3);
+      background: #313244;
+      color: #a6e3a1;
+      border: 1px solid rgba(166, 227, 161, 0.3);
     }
 
     .status.error {
-      background: rgba(255, 59, 48, 0.9);
-      color: #fff;
-      box-shadow: 0 8px 32px rgba(255, 59, 48, 0.3);
+      background: #313244;
+      color: #f38ba8;
+      border: 1px solid rgba(243, 139, 168, 0.3);
     }
 
     .status.info {
-      background: rgba(0, 122, 255, 0.9);
-      color: #fff;
-      box-shadow: 0 8px 32px rgba(0, 122, 255, 0.3);
+      background: #313244;
+      color: #89b4fa;
+      border: 1px solid rgba(137, 180, 250, 0.3);
     }
 
     .status a {
@@ -587,21 +567,21 @@
       align-items: center;
       justify-content: center;
       padding: 5px 10px;
-      border-radius: var(--radius-pill);
+      border-radius: var(--radius-sm);
       font-size: 12px;
       font-weight: 700;
-      background: rgba(255, 149, 0, 0.16);
+      background: rgba(249, 226, 175, 0.16);
       color: var(--accent-warning);
       white-space: nowrap;
     }
 
     .auth-pill.authorized {
-      background: rgba(52, 199, 89, 0.16);
+      background: rgba(166, 227, 161, 0.16);
       color: var(--accent-success);
     }
 
     .auth-pill.error {
-      background: rgba(255, 59, 48, 0.16);
+      background: rgba(243, 139, 168, 0.16);
       color: var(--accent-error);
     }
 
@@ -716,22 +696,18 @@
     .social-link {
       width: 48px;
       height: 48px;
-      border-radius: 50%;
+      border-radius: var(--radius-md);
       background: var(--bg-card);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
       border: 1px solid var(--border-subtle);
       display: flex;
       align-items: center;
       justify-content: center;
       text-decoration: none;
       color: var(--text-secondary);
-      transition: transform var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
+      transition: background var(--transition-fast);
     }
 
     .social-link:hover {
-      transform: scale(1.1);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
       background: var(--bg-card-hover);
     }
 
@@ -747,7 +723,6 @@
 
     .social-link-telegram:hover {
       background: rgba(38, 165, 228, 0.15);
-      box-shadow: 0 8px 24px rgba(38, 165, 228, 0.3);
     }
 
     .social-link-youtube {
@@ -756,7 +731,6 @@
 
     .social-link-youtube:hover {
       background: rgba(255, 0, 0, 0.12);
-      box-shadow: 0 8px 24px rgba(255, 0, 0, 0.25);
     }
 
     .social-link-github {
@@ -765,7 +739,6 @@
 
     .social-link-github:hover {
       background: var(--bg-card-hover);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
     }
 
     [data-theme="dark"] .social-link-github {
@@ -915,25 +888,7 @@ https://notion.so/page
         <select id="settings-account-select" class="form-select">
           <option value="0">Loading accounts...</option>
         </select>
-        <div class="link-count" data-i18n="settings_accountHint">Select which Google account to use for NotebookLM</div>
-      </div>
-
-      <div class="auth-settings-card">
-        <div class="auth-settings-header">
-          <div class="auth-settings-title" data-i18n="settings_exportAuthTitle">Google export authorization</div>
-          <div id="settings-export-auth-badge" class="auth-pill" data-i18n="popup_exportAuthMissing">Not connected</div>
-        </div>
-        <div class="auth-settings-copy" data-i18n="settings_exportAuthHint">Authorize the separate Google access required for future export features. NotebookLM account selection above still applies only to imports.</div>
-        <div id="settings-export-auth-status" class="auth-settings-status" data-i18n="settings_exportAuthLoading">Checking export authorization...</div>
-        <div id="settings-export-auth-meta" class="auth-settings-meta"></div>
-        <div class="auth-settings-actions">
-          <button id="settings-export-auth-btn" class="btn btn-secondary" type="button">
-            <span data-i18n="settings_exportAuthAction">Authorize Google Export</span>
-          </button>
-          <button id="settings-clear-export-auth-btn" class="btn btn-secondary" type="button">
-            <span data-i18n="settings_exportAuthClear">Clear Authorization</span>
-          </button>
-        </div>
+        <div class="link-count" data-i18n="settings_accountHint">Select which Google account to use for NotebookLM in the current browser session</div>
       </div>
 
       <div class="form-group">
@@ -995,17 +950,17 @@ https://notion.so/page
         </div>
 
         <div class="social-links">
-          <a href="https://t.me/AI_Handler" target="_blank" title="Telegram" class="social-link social-link-telegram">
+          <a href="https://t.me/Notkisa" target="_blank" title="Telegram" class="social-link social-link-telegram">
             <svg viewBox="0 0 24 24" fill="currentColor">
               <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
             </svg>
           </a>
-          <a href="https://www.youtube.com/@Handler_AI" target="_blank" title="YouTube" class="social-link social-link-youtube">
+          <a href="https://github.com/howdeploy" target="_blank" title="GitHub (howdeploy)" class="social-link social-link-youtube">
             <svg viewBox="0 0 24 24" fill="currentColor">
               <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
             </svg>
           </a>
-          <a href="https://github.com/AndyShaman" target="_blank" title="GitHub" class="social-link social-link-github">
+          <a href="https://kisa.deploychan.webcam/" target="_blank" title="Website" class="social-link social-link-github">
             <svg viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0 1 12 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/>
             </svg>

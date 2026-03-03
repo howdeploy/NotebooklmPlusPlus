@@ -5,65 +5,67 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title data-i18n="popup_title">NotebookLM++</title>
   <style>
-    /* ===== CSS Variables - Light Theme ===== */
+    /* ===== CSS Variables - Catppuccin Latte (Light) ===== */
     :root {
       /* Backgrounds */
-      --bg-body: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
-      --bg-card: rgba(255, 255, 255, 0.7);
-      --bg-card-hover: rgba(255, 255, 255, 0.85);
-      --bg-input: rgba(255, 255, 255, 0.9);
-
-      /* Blur */
-      --blur-card: 20px;
+      --bg-body: #eff1f5;
+      --bg-card: #e6e9ef;
+      --bg-card-hover: #dce0e8;
+      --bg-input: #ccd0da;
 
       /* Borders */
-      --border-subtle: rgba(255, 255, 255, 0.5);
-      --border-input: rgba(0, 0, 0, 0.1);
+      --border-subtle: #bcc0cc;
+      --border-input: #acb0be;
 
       /* Text */
-      --text-primary: #1d1d1f;
-      --text-secondary: #6e6e73;
-      --text-muted: #86868b;
+      --text-primary: #4c4f69;
+      --text-secondary: #5c5f77;
+      --text-muted: #6c6f85;
 
       /* Accent */
-      --accent-primary: #007AFF;
-      --accent-primary-hover: #0056CC;
-      --accent-success: #34C759;
-      --accent-error: #FF3B30;
-      --accent-warning: #FF9500;
+      --accent-primary: #1e66f5;
+      --accent-primary-hover: #1252d9;
+      --accent-success: #40a02b;
+      --accent-error: #d20f39;
+      --accent-warning: #df8e1d;
 
       /* Shadows */
-      --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.08);
-      --shadow-button: 0 4px 16px rgba(0, 122, 255, 0.3);
-      --shadow-button-hover: 0 6px 20px rgba(0, 122, 255, 0.4);
+      --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.06);
+      --shadow-button: none;
+      --shadow-button-hover: none;
 
       /* Radius */
-      --radius-sm: 8px;
-      --radius-md: 12px;
-      --radius-lg: 16px;
-      --radius-xl: 24px;
-      --radius-pill: 50px;
+      --radius-sm: 6px;
+      --radius-md: 8px;
+      --radius-lg: 10px;
+      --radius-xl: 12px;
 
       /* Transitions */
       --transition-fast: 0.2s ease;
       --transition-normal: 0.3s ease;
     }
 
-    /* ===== Dark Theme ===== */
+    /* ===== Dark Theme - Catppuccin Mocha ===== */
     [data-theme="dark"] {
-      --bg-body: linear-gradient(135deg, #1c1c1e 0%, #2c2c2e 100%);
-      --bg-card: rgba(44, 44, 46, 0.7);
-      --bg-card-hover: rgba(58, 58, 60, 0.8);
-      --bg-input: rgba(44, 44, 46, 0.9);
+      --bg-body: #1e1e2e;
+      --bg-card: #313244;
+      --bg-card-hover: #45475a;
+      --bg-input: #313244;
 
-      --border-subtle: rgba(255, 255, 255, 0.1);
-      --border-input: rgba(255, 255, 255, 0.15);
+      --border-subtle: #45475a;
+      --border-input: #585b70;
 
-      --text-primary: #f5f5f7;
-      --text-secondary: #a1a1a6;
-      --text-muted: #6e6e73;
+      --text-primary: #cdd6f4;
+      --text-secondary: #a6adc8;
+      --text-muted: #6c7086;
 
-      --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.3);
+      --accent-primary: #89b4fa;
+      --accent-primary-hover: #b4befe;
+      --accent-success: #a6e3a1;
+      --accent-error: #f38ba8;
+      --accent-warning: #f9e2af;
+
+      --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.3);
     }
 
     /* ===== Base Styles ===== */
@@ -76,7 +78,7 @@
     body {
       width: 360px;
       padding: 12px;
-      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      font-family: 'Fira Code', 'Google Sans', Roboto, monospace;
       background: var(--bg-body);
       color: var(--text-primary);
       -webkit-font-smoothing: antialiased;
@@ -118,14 +120,11 @@
       line-height: 1.4;
     }
 
-    /* ===== Cards (Glassmorphism) ===== */
+    /* ===== Cards ===== */
     .current-page {
       background: var(--bg-card);
-      backdrop-filter: blur(var(--blur-card));
-      -webkit-backdrop-filter: blur(var(--blur-card));
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-lg);
-      box-shadow: var(--shadow-card);
       padding: 10px 12px;
       margin-bottom: 10px;
       transition: background var(--transition-fast);
@@ -137,11 +136,8 @@
 
     .auth-panel {
       background: var(--bg-card);
-      backdrop-filter: blur(var(--blur-card));
-      -webkit-backdrop-filter: blur(var(--blur-card));
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-lg);
-      box-shadow: var(--shadow-card);
       padding: 12px;
       margin-bottom: 10px;
     }
@@ -167,20 +163,20 @@
       align-items: center;
       justify-content: center;
       padding: 4px 8px;
-      border-radius: var(--radius-pill);
+      border-radius: var(--radius-sm);
       font-size: 11px;
       font-weight: 700;
-      background: rgba(255, 149, 0, 0.16);
+      background: rgba(249, 226, 175, 0.16);
       color: var(--accent-warning);
     }
 
     .auth-badge.authorized {
-      background: rgba(52, 199, 89, 0.16);
+      background: rgba(166, 227, 161, 0.16);
       color: var(--accent-success);
     }
 
     .auth-badge.error {
-      background: rgba(255, 59, 48, 0.16);
+      background: rgba(243, 139, 168, 0.16);
       color: var(--accent-error);
     }
 
@@ -268,20 +264,19 @@
       cursor: pointer;
       transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
       appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236e6e73' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236c6f85' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
       background-repeat: no-repeat;
       background-position: right 14px center;
       padding-right: 36px;
     }
 
     [data-theme="dark"] .notebook-select {
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a1a1a6' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a6adc8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
     }
 
     .notebook-select:focus {
       outline: none;
       border-color: var(--accent-primary);
-      box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.15);
     }
 
     .open-notebook-btn {
@@ -298,7 +293,6 @@
 
     .open-notebook-btn:hover:not(:disabled) {
       background: var(--bg-card-hover);
-      transform: scale(1.05);
     }
 
     .open-notebook-btn:disabled {
@@ -319,56 +313,39 @@
       font-size: 13px;
       font-weight: 600;
       border: none;
-      border-radius: var(--radius-pill);
+      border-radius: var(--radius-md);
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
-      transition: transform var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast), opacity var(--transition-fast);
+      transition: background var(--transition-fast), opacity var(--transition-fast);
     }
 
     .btn:disabled {
       opacity: 0.5;
       cursor: not-allowed;
-      transform: none !important;
-      box-shadow: none !important;
     }
 
     .btn-primary {
       background: var(--accent-primary);
-      color: #fff;
+      color: #1e1e2e;
       margin-bottom: 6px;
-      box-shadow: var(--shadow-button);
     }
 
     .btn-primary:hover:not(:disabled) {
       background: var(--accent-primary-hover);
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-button-hover);
-    }
-
-    .btn-primary:active:not(:disabled) {
-      transform: translateY(0);
     }
 
     .btn-secondary {
-      background: var(--bg-card);
-      backdrop-filter: blur(var(--blur-card));
-      -webkit-backdrop-filter: blur(var(--blur-card));
+      background: transparent;
       color: var(--accent-primary);
       border: 1px solid var(--border-subtle);
       margin-bottom: 6px;
-      box-shadow: var(--shadow-card);
     }
 
     .btn-secondary:hover:not(:disabled) {
       background: var(--bg-card-hover);
-      transform: translateY(-2px);
-    }
-
-    .btn-secondary:active:not(:disabled) {
-      transform: translateY(0);
     }
 
     /* ===== Divider ===== */
@@ -399,28 +376,26 @@
       font-size: 14px;
       font-weight: 500;
       display: none;
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
     }
 
     .status.success {
-      background: rgba(52, 199, 89, 0.15);
+      background: rgba(166, 227, 161, 0.1);
       color: var(--accent-success);
-      border: 1px solid rgba(52, 199, 89, 0.3);
+      border: 1px solid rgba(166, 227, 161, 0.25);
       display: block;
     }
 
     .status.error {
-      background: rgba(255, 59, 48, 0.15);
+      background: rgba(243, 139, 168, 0.1);
       color: var(--accent-error);
-      border: 1px solid rgba(255, 59, 48, 0.3);
+      border: 1px solid rgba(243, 139, 168, 0.25);
       display: block;
     }
 
     .status.loading {
-      background: rgba(0, 122, 255, 0.15);
+      background: rgba(137, 180, 250, 0.1);
       color: var(--accent-primary);
-      border: 1px solid rgba(0, 122, 255, 0.3);
+      border: 1px solid rgba(137, 180, 250, 0.25);
       display: flex;
       align-items: center;
       gap: 10px;
@@ -467,20 +442,17 @@
     }
 
     .settings-btn {
-      background: var(--bg-card);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
+      background: transparent;
       border: 1px solid var(--border-subtle);
       cursor: pointer;
       padding: 8px;
       border-radius: var(--radius-sm);
       color: var(--text-secondary);
-      transition: background var(--transition-fast), transform var(--transition-fast);
+      transition: background var(--transition-fast);
     }
 
     .settings-btn:hover {
       background: var(--bg-card-hover);
-      transform: scale(1.1);
     }
 
     .settings-btn svg {
@@ -514,9 +486,7 @@
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(0, 0, 0, 0.5);
-      backdrop-filter: blur(4px);
-      -webkit-backdrop-filter: blur(4px);
+      background: rgba(17, 17, 27, 0.7);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -525,11 +495,9 @@
 
     .modal {
       background: var(--bg-card);
-      backdrop-filter: blur(var(--blur-card));
-      -webkit-backdrop-filter: blur(var(--blur-card));
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-xl);
-      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
       padding: 24px;
       width: 320px;
       max-width: 90%;
@@ -557,7 +525,6 @@
     .modal input:focus {
       outline: none;
       border-color: var(--accent-primary);
-      box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.15);
     }
 
     .modal input::placeholder {
@@ -595,7 +562,7 @@
     }
 
     #cancel-parse-btn:hover {
-      background: rgba(255, 59, 48, 0.1);
+      background: rgba(243, 139, 168, 0.1);
     }
   </style>
 </head>
@@ -619,7 +586,7 @@
 
   <!-- Notebook selector -->
   <div class="section-label" data-i18n="popup_selectNotebook">Add to notebook:</div>
-  <div class="helper-copy" data-i18n="popup_notebookBoundary">Notebook and account selection below still control NotebookLM imports. Google export authorization is configured separately.</div>
+  <div class="helper-copy" data-i18n="popup_notebookBoundary">Notebook and account selection below control NotebookLM imports for the current signed-in session.</div>
   <div class="notebook-row">
     <select id="notebook-select" class="notebook-select">
       <option value="" data-i18n="popup_loadingNotebooks">Loading notebooks...</option>
@@ -651,23 +618,6 @@
   <button id="new-notebook-btn" class="btn btn-secondary">
     <span>📔</span> <span data-i18n="popup_createNotebook">Create New Notebook</span>
   </button>
-
-  <div class="auth-panel">
-    <div class="auth-panel-header">
-      <div class="auth-panel-title" data-i18n="popup_exportAuthTitle">Google export authorization</div>
-      <div id="export-auth-badge" class="auth-badge" data-i18n="popup_exportAuthMissing">Not connected</div>
-    </div>
-    <div class="auth-panel-copy" data-i18n="popup_exportAuthHint">Use this once to connect the Google authorization needed for future exports. It does not change your NotebookLM import account.</div>
-    <div id="export-auth-status" class="auth-panel-status" data-i18n="popup_exportAuthLoading">Checking export authorization...</div>
-    <div class="auth-actions">
-      <button id="export-auth-btn" class="btn btn-secondary" type="button">
-        <span data-i18n="popup_exportAuthAction">Authorize Google Export</span>
-      </button>
-      <button id="clear-export-auth-btn" class="btn btn-secondary" type="button">
-        <span data-i18n="popup_exportAuthClear">Clear Authorization</span>
-      </button>
-    </div>
-  </div>
 
   <div class="divider"></div>
 

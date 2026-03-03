@@ -1,7 +1,7 @@
 // Background Service Worker for NotebookLM++
-// Handles NotebookLM import flows and export auth message routing.
+// Handles NotebookLM import flows and related helper actions.
 
-importScripts('lib/youtube-comments-api.js', 'lib/comments-to-md.js', 'lib/export-auth.js');
+importScripts('lib/youtube-comments-api.js', 'lib/comments-to-md.js');
 
 // ============================================
 // Utilities
@@ -491,6 +491,9 @@ let parseState = {
   result: null
 };
 
+const NOTE_EXPORT_SELECTION_STORAGE_KEY = 'nlmPendingNoteExportSelection';
+const NOTE_EXPORT_RESULTS_STORAGE_KEY = 'nlmLastNoteExportBatch';
+
 // Initialize on install
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === 'install') {
@@ -538,8 +541,7 @@ async function handleMessage(request, sender) {
   currentAuthuser = storage.selectedAccount || storage.selected_account || 0;
 
   // Commands that don't require tokens
-  const exportAuthCommands = ['get-export-auth-status', 'begin-export-auth', 'clear-export-auth'];
-  const noTokenCommands = ['list-accounts', 'ping', 'get-current-tab', 'get-all-tabs', 'get-parse-status', 'cancel-parse', ...exportAuthCommands];
+  const noTokenCommands = ['list-accounts', 'ping', 'get-current-tab', 'get-all-tabs', 'get-parse-status', 'cancel-parse', 'set-note-export-selection', 'get-note-export-selection', 'clear-note-export-selection', 'get-note-export-results', 'clear-note-export-results'];
 
   // Ensure we have tokens for API calls
   if (!noTokenCommands.includes(cmd)) {
@@ -553,15 +555,6 @@ async function handleMessage(request, sender) {
   switch (cmd) {
     case 'ping':
       return { ok: true };
-
-    case 'get-export-auth-status':
-      return await getExportAuthStatus();
-
-    case 'begin-export-auth':
-      return await beginExportAuth();
-
-    case 'clear-export-auth':
-      return await clearExportAuth();
 
     case 'list-accounts':
       return await listAccounts();
@@ -628,6 +621,21 @@ async function handleMessage(request, sender) {
         parseState.active = false;
       }
       return { success: true };
+
+    case 'set-note-export-selection':
+      return await setNoteExportSelection(params);
+
+    case 'get-note-export-selection':
+      return await getNoteExportSelection();
+
+    case 'clear-note-export-selection':
+      return await clearNoteExportSelection();
+
+    case 'get-note-export-results':
+      return await getNoteExportResults();
+
+    case 'clear-note-export-results':
+      return await clearNoteExportResults();
 
     case 'add-as-pdf':
       try {
@@ -839,6 +847,63 @@ async function getAllTabs() {
   } catch (error) {
     return { error: error.message, tabs: [] };
   }
+}
+
+async function setNoteExportSelection({ notebookId, noteKeys, notes, source }) {
+  if (!notebookId || !Array.isArray(noteKeys) || noteKeys.length === 0) {
+    return { error: 'No note selection provided' };
+  }
+
+  const sanitizedNotes = Array.isArray(notes)
+    ? notes
+      .filter((note) => note && typeof note.key === 'string')
+      .map((note) => ({
+        key: note.key,
+        title: typeof note.title === 'string' ? note.title : '',
+        index: typeof note.index === 'number' ? note.index : null
+      }))
+    : [];
+
+  const selection = {
+    notebookId,
+    noteKeys: noteKeys.filter((noteKey) => typeof noteKey === 'string' && noteKey),
+    notes: sanitizedNotes,
+    source: typeof source === 'string' ? source : 'unknown',
+    updatedAt: Date.now()
+  };
+
+  await chrome.storage.local.set({
+    [NOTE_EXPORT_SELECTION_STORAGE_KEY]: selection
+  });
+
+  return {
+    success: true,
+    selection
+  };
+}
+
+async function getNoteExportSelection() {
+  const result = await chrome.storage.local.get([NOTE_EXPORT_SELECTION_STORAGE_KEY]);
+  return {
+    selection: result[NOTE_EXPORT_SELECTION_STORAGE_KEY] || null
+  };
+}
+
+async function clearNoteExportSelection() {
+  await chrome.storage.local.remove([NOTE_EXPORT_SELECTION_STORAGE_KEY]);
+  return { success: true };
+}
+
+async function getNoteExportResults() {
+  const result = await chrome.storage.local.get([NOTE_EXPORT_RESULTS_STORAGE_KEY]);
+  return {
+    results: result[NOTE_EXPORT_RESULTS_STORAGE_KEY] || null
+  };
+}
+
+async function clearNoteExportResults() {
+  await chrome.storage.local.remove([NOTE_EXPORT_RESULTS_STORAGE_KEY]);
+  return { success: true };
 }
 
 // Save URL(s) to notebook (main workflow)

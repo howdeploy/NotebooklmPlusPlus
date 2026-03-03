@@ -1,8 +1,5 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import {
-  validateManifestOauthClientId
-} from '../scripts/check-extension-oauth-client.mjs';
 
 const repoRoot = path.resolve(new URL('..', import.meta.url).pathname);
 
@@ -32,19 +29,17 @@ const appJs = read('app/app.js');
 const backgroundJs = read('background.js');
 const localeEn = read('_locales/en/messages.json');
 
-validateManifestOauthClientId(manifest);
-
 assert(
   manifest.short_name === 'NotebookLM++',
   'manifest short_name must keep the NotebookLM++ brand'
 );
 assert(
-  Array.isArray(manifest.permissions) && manifest.permissions.includes('identity'),
-  'manifest must request the identity permission for official Google auth'
+  Array.isArray(manifest.permissions) && !manifest.permissions.includes('identity'),
+  'manifest must not request the identity permission in the session-based architecture'
 );
 assert(
-  Array.isArray(manifest.oauth2?.scopes) && manifest.oauth2.scopes.includes('https://www.googleapis.com/auth/drive.file'),
-  'manifest oauth2 scopes must include drive.file'
+  !manifest.oauth2,
+  'manifest must not declare oauth2 config in the session-based architecture'
 );
 
 const importFacingSignals = [
@@ -52,7 +47,8 @@ const importFacingSignals = [
   'Create New Notebook',
   'Bulk Import',
   'Import Links',
-  'NotebookLM imports'
+  'NotebookLM imports',
+  'current signed-in session'
 ];
 
 for (const signal of importFacingSignals) {
@@ -62,20 +58,26 @@ for (const signal of importFacingSignals) {
   assert(present, `expected import-facing UI copy to remain present: ${signal}`);
 }
 
-const authCommands = [
+const forbiddenAuthCommands = [
   'get-export-auth-status',
   'begin-export-auth',
   'clear-export-auth'
 ];
 
-for (const command of authCommands) {
-  assertIncludes(popupJs, command, `popup auth wiring must reference ${command}`);
-  assertIncludes(backgroundJs, command, `background auth wiring must reference ${command}`);
+for (const command of forbiddenAuthCommands) {
+  assert(
+    !popupJs.includes(command),
+    `popup must not reference removed auth command ${command}`
+  );
+  assert(
+    !appJs.includes(command),
+    `app must not reference removed auth command ${command}`
+  );
+  assert(
+    !backgroundJs.includes(command),
+    `background must not reference removed auth command ${command}`
+  );
 }
-
-assertIncludes(appJs, 'get-export-auth-status', 'app auth wiring must refresh export auth status');
-assertIncludes(appJs, 'begin-export-auth', 'app auth wiring must start export auth');
-assertIncludes(appJs, 'clear-export-auth', 'app auth wiring must clear export auth');
 
 const phase1UiFiles = [
   ['popup/popup.html', popupHtml],
@@ -96,7 +98,10 @@ const forbiddenExecutionSignals = [
   'Export Selected Notes',
   'Run Export',
   'Start Export',
-  'Export Now'
+  'Export Now',
+  'Authorize Google Export',
+  'Clear Authorization',
+  'Google export authorization'
 ];
 
 for (const [file, source] of phase1UiFiles) {

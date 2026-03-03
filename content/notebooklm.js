@@ -1,184 +1,564 @@
-// Content script for NotebookLM - Bulk Delete Sources + Drive Sync
-// Injects a delete button when multiple sources are selected
-// Injects a sync button to refresh Google Drive sources
+// Content script for NotebookLM++
+// Keeps existing bulk-delete and Drive-sync helpers while adding Phase 2 note selection UI.
 
 (function() {
   'use strict';
 
-  let deleteButton = null;
-  let isEnabled = true;
-  let observer = null;
+  const NOTE_SELECTION_STORAGE_PREFIX = 'nlm-note-selection:';
+  const ACTION_HOST_ID = 'nlm-action-host';
+  const EXPORT_BAR_ID = 'nlm-note-export-bar';
+  const EXPORT_BUTTON_ID = 'nlm-note-export-btn';
+  const EXPORT_COUNT_ID = 'nlm-note-export-count';
+  const EXPORT_STATUS_PANEL_ID = 'nlm-note-export-status';
+  const EXPORT_STATUS_TITLE_ID = 'nlm-note-export-status-title';
+  const EXPORT_STATUS_SUMMARY_ID = 'nlm-note-export-status-summary';
+  const EXPORT_STATUS_LIST_ID = 'nlm-note-export-status-list';
+  const EXPORT_STATUS_HINT_ID = 'nlm-note-export-status-hint';
+  const EXPORT_CLEAR_BUTTON_ID = 'nlm-note-export-clear-results';
+  const NOTE_CHECKBOX_CLASS = 'nlm-note-checkbox';
+  const NOTE_WRAPPER_CLASS = 'nlm-note-selection-chip';
+  const NOTE_BADGE_CLASS = 'nlm-note-selection-badge';
+  const NOTE_KEY_ATTR = 'data-nlm-note-key';
+  const NOTE_INDEX_ATTR = 'data-nlm-note-index';
+  const EXPORT_SELECTION_STORAGE_KEY = 'nlmPendingNoteExportSelection';
+  const EXTENSION_STYLE_ID = 'nlm-phase2-styles';
+  const EXPORT_ACTION_SOURCE = 'phase2-note-selection';
+  const EXPORT_RESULTS_STORAGE_KEY = 'nlmLastNoteExportBatch';
 
-  // Sync button state
+  const NOTE_CONTAINER_SELECTORS = [
+    'artifact-library-note',
+    '.artifact-item-button',
+    '[class*="artifact-library"] [class*="artifact-item"]'
+  ];
+
+  const NOTE_HEADING_SELECTORS = [
+    '.artifact-title',
+    '[data-note-title]',
+    'h1',
+    'h2',
+    'h3',
+    'h4',
+    '[role="heading"]',
+    '[class*="title"]'
+  ];
+
+  const EXCLUDED_NOTE_SELECTORS = [
+    '.single-source-container',
+    '#nlm-bulk-delete-btn',
+    '#nlm-sync-drive-btn',
+    `#${EXPORT_BAR_ID}`,
+    `.${NOTE_WRAPPER_CLASS}`,
+    '[data-nlm-ignore="true"]'
+  ];
+
+  const FALLBACK_MESSAGES = {
+    noteExportAction: {
+      en: 'NotebookLM++ Export',
+      ru: 'NotebookLM++ Экспорт'
+    },
+    noteExportSelect: {
+      en: 'Select note for NotebookLM++ export',
+      ru: 'Выбрать заметку для экспорта NotebookLM++'
+    },
+    noteExportSelected: {
+      en: 'selected',
+      ru: 'выбрано'
+    },
+    noteExportBadge: {
+      en: 'Export',
+      ru: 'Экспорт'
+    },
+    noteExportReady: {
+      en: 'Selection saved for export',
+      ru: 'Выбор сохранён для экспорта'
+    },
+    noteExportEmpty: {
+      en: 'Select at least one note first',
+      ru: 'Сначала выберите хотя бы одну заметку'
+    },
+    noteExportUnavailable: {
+      en: 'No exportable notes found yet',
+      ru: 'Пока не найдены заметки для экспорта'
+    },
+    noteExportQueued: {
+      en: 'Ready for Phase 3 export pipeline',
+      ru: 'Готово для Phase 3 export pipeline'
+    },
+    noteExportRunning: {
+      en: 'Exporting selected notes...',
+      ru: 'Экспорт выбранных заметок...'
+    },
+    noteExportCompleted: {
+      en: 'Export automation finished',
+      ru: 'Автоматизация экспорта завершена'
+    },
+    noteExportFailed: {
+      en: 'Export automation failed',
+      ru: 'Ошибка автоматизации экспорта'
+    },
+    noteExportStatusRunning: {
+      en: 'Export in progress',
+      ru: 'Экспорт выполняется'
+    },
+    noteExportStatusFinished: {
+      en: 'Last export batch',
+      ru: 'Последний batch экспорта'
+    },
+    noteExportResultReady: {
+      en: 'Export triggered',
+      ru: 'Экспорт запущен'
+    },
+    noteExportResultError: {
+      en: 'Export failed',
+      ru: 'Экспорт не удался'
+    },
+    noteExportResultPending: {
+      en: 'Waiting',
+      ru: 'Ожидание'
+    },
+    noteExportResultModeDirect: {
+      en: 'direct control',
+      ru: 'прямой control'
+    },
+    noteExportResultModeMenu: {
+      en: 'menu action',
+      ru: 'через меню'
+    },
+    noteExportResultModeUnknown: {
+      en: 'automation path',
+      ru: 'automation path'
+    },
+    noteExportResultsEmpty: {
+      en: 'No export batch recorded yet',
+      ru: 'Пока нет сохранённого batch экспорта'
+    },
+    noteExportResultsClear: {
+      en: 'Clear results',
+      ru: 'Очистить результаты'
+    },
+    noteExportResultsHint: {
+      en: 'NotebookLM usually opens exported Google Docs in its own flow. Use these note titles to verify what finished.',
+      ru: 'NotebookLM обычно открывает экспортированные Google Docs своим нативным способом. Используйте эти названия заметок, чтобы сверить, что завершилось.'
+    },
+    noteExportProgressSummary: {
+      en: 'Completed',
+      ru: 'Завершено'
+    },
+    noteExportSucceededCount: {
+      en: 'Succeeded',
+      ru: 'Успешно'
+    },
+    noteExportFailedCount: {
+      en: 'Failed',
+      ru: 'Ошибки'
+    },
+    noteExportNativeMissing: {
+      en: 'Native NotebookLM export control not found',
+      ru: 'Не найден нативный control экспорта NotebookLM'
+    },
+    noteExportNativeClicked: {
+      en: 'Triggered native NotebookLM export',
+      ru: 'Запущен нативный экспорт NotebookLM'
+    },
+    syncDriveSources: {
+      en: 'Sync Google Drive sources',
+      ru: 'Синхронизировать Google Drive источники'
+    },
+    syncing: {
+      en: 'Syncing...',
+      ru: 'Синхронизация...'
+    },
+    deleteSelected: {
+      en: 'Delete Selected',
+      ru: 'Удалить выбранное'
+    },
+    deleting: {
+      en: 'Deleting...',
+      ru: 'Удаление...'
+    },
+    extensionReload: {
+      en: 'Extension was updated. Please reload the page (F5).',
+      ru: 'Расширение было обновлено. Пожалуйста, перезагрузите страницу (F5).'
+    },
+    noResponse: {
+      en: 'No response from extension. Please reload the page (F5).',
+      ru: 'Нет ответа от расширения. Перезагрузите страницу (F5).'
+    }
+  };
+
+  let deleteButton = null;
   let syncButton = null;
+  let exportActionBar = null;
+  let exportActionButton = null;
+  let exportCount = null;
+  let observer = null;
+  let isEnabled = true;
   let isSyncEnabled = true;
   let isSyncing = false;
+  let currentNotebookId = null;
+  let noteRegistry = new Map();
+  let selectionStateByNotebook = new Map();
+  let selectionLoadedForNotebook = new Set();
+  let saveSelectionTimeout = null;
+  let exportInProgress = false;
+  let exportStatusPanel = null;
+  let exportStatusTitle = null;
+  let exportStatusSummary = null;
+  let exportStatusList = null;
+  let exportStatusHint = null;
+  let exportClearButton = null;
+  let latestExportBatch = null;
+  let exportProgressState = null;
 
-  // Check if feature is enabled in settings
+  function getLang() {
+    return (document.documentElement.lang || navigator.language || 'en').substring(0, 2).toLowerCase();
+  }
+
+  function t(key) {
+    try {
+      const localized = chrome.i18n?.getMessage?.(key);
+      if (localized) {
+        return localized;
+      }
+    } catch (error) {
+      // Fall back to inline defaults.
+    }
+
+    const entry = FALLBACK_MESSAGES[key];
+    if (!entry) {
+      return key;
+    }
+
+    return entry[getLang()] || entry.en || key;
+  }
+
+  function normalizeText(value) {
+    return (value || '').replace(/\s+/g, ' ').trim();
+  }
+
+  function wait(ms) {
+    return new Promise((resolve) => {
+      setTimeout(resolve, ms);
+    });
+  }
+
+  function isVisible(element) {
+    if (!element || !(element instanceof HTMLElement)) {
+      return false;
+    }
+
+    if (element.matches('artifact-library-note')) {
+      return element.querySelector('.artifact-item-button, .artifact-title') !== null;
+    }
+
+    if (element.offsetParent === null && getComputedStyle(element).position !== 'fixed') {
+      return false;
+    }
+
+    const style = getComputedStyle(element);
+    if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
+      return false;
+    }
+
+    return true;
+  }
+
+  function stableHash(input) {
+    let hash = 0;
+    for (let i = 0; i < input.length; i++) {
+      hash = ((hash << 5) - hash) + input.charCodeAt(i);
+      hash |= 0;
+    }
+
+    return `nlm-${Math.abs(hash).toString(36)}`;
+  }
+
+  function getNotebookId() {
+    const match = window.location.pathname.match(/\/notebook\/([^/?#]+)/i);
+    if (match && match[1]) {
+      return decodeURIComponent(match[1]);
+    }
+
+    const notebookRoot = document.querySelector('notebook, notebook-header');
+    const fallbackId = notebookRoot?.getAttribute('data-notebook-id') ||
+      notebookRoot?.getAttribute('notebook-id') ||
+      notebookRoot?.getAttribute('data-id');
+    return fallbackId || null;
+  }
+
+  function getNotebookScopeId() {
+    const explicitId = getNotebookId();
+    if (explicitId) {
+      return explicitId;
+    }
+
+    const title = normalizeText(document.querySelector('notebook-header .notebook-title, h1.notebook-title, h1')?.textContent);
+    if (title) {
+      return `title:${title}`;
+    }
+
+    const path = normalizeText(window.location.pathname);
+    if (path && path !== '/') {
+      return `path:${path}`;
+    }
+
+    const hasArtifacts = document.querySelector('artifact-library-note, .artifact-item-button');
+    if (hasArtifacts) {
+      return 'notebook:unknown';
+    }
+
+    return null;
+  }
+
+  function getSelectionStorageKey(notebookId) {
+    return `${NOTE_SELECTION_STORAGE_PREFIX}${notebookId}`;
+  }
+
+  function ensureSelectionSet(notebookId) {
+    if (!selectionStateByNotebook.has(notebookId)) {
+      selectionStateByNotebook.set(notebookId, new Set());
+    }
+
+    return selectionStateByNotebook.get(notebookId);
+  }
+
+  async function loadPersistedSelection(notebookId) {
+    if (!notebookId || selectionLoadedForNotebook.has(notebookId)) {
+      return;
+    }
+
+    try {
+      const result = await chrome.storage.local.get([getSelectionStorageKey(notebookId)]);
+      const stored = result[getSelectionStorageKey(notebookId)];
+      const nextSet = ensureSelectionSet(notebookId);
+      nextSet.clear();
+
+      if (stored && stored.notebookId === notebookId && Array.isArray(stored.noteKeys)) {
+        stored.noteKeys.forEach((noteKey) => {
+          if (typeof noteKey === 'string' && noteKey) {
+            nextSet.add(noteKey);
+          }
+        });
+      }
+    } catch (error) {
+      // Ignore storage restore failures and continue in-memory only.
+    } finally {
+      selectionLoadedForNotebook.add(notebookId);
+    }
+  }
+
+  function scheduleSelectionPersist(notebookId) {
+    clearTimeout(saveSelectionTimeout);
+    saveSelectionTimeout = setTimeout(async () => {
+      if (!notebookId) {
+        return;
+      }
+
+      const noteKeys = Array.from(ensureSelectionSet(notebookId));
+
+      try {
+        await chrome.storage.local.set({
+          [getSelectionStorageKey(notebookId)]: {
+            notebookId,
+            noteKeys,
+            updatedAt: Date.now()
+          }
+        });
+      } catch (error) {
+        // Ignore persistence failures for this phase.
+      }
+    }, 120);
+  }
+
   async function checkEnabled() {
     try {
       const result = await chrome.storage.sync.get(['enableBulkDelete']);
-      isEnabled = result.enableBulkDelete !== false; // Default to true
+      isEnabled = result.enableBulkDelete !== false;
       return isEnabled;
-    } catch (e) {
+    } catch (error) {
       return true;
     }
   }
 
-  // Get selected source IDs from the page
+  async function checkSyncEnabled() {
+    try {
+      const result = await chrome.storage.sync.get(['enableSyncDrive']);
+      isSyncEnabled = result.enableSyncDrive !== false;
+      return isSyncEnabled;
+    } catch (error) {
+      return true;
+    }
+  }
+
+  function getHeaderAnchor() {
+    const notebookTitle = document.querySelector('main h1, header h1, h1');
+    if (!notebookTitle) {
+      return null;
+    }
+
+    let parent = notebookTitle.parentElement;
+    for (let i = 0; i < 6 && parent; i++) {
+      const className = typeof parent.className === 'string' ? parent.className : '';
+      const style = getComputedStyle(parent);
+      const isNotebookLevelContainer = !parent.closest('artifact-library-note') && (
+        style.display === 'flex' ||
+        style.display === 'grid' ||
+        className.includes('header') ||
+        className.includes('toolbar')
+      );
+      if (
+        isNotebookLevelContainer
+      ) {
+        return { notebookTitle, targetContainer: parent };
+      }
+      parent = parent.parentElement;
+    }
+
+    return { notebookTitle, targetContainer: notebookTitle.parentElement };
+  }
+
+  function ensureActionHost() {
+    const anchor = getHeaderAnchor();
+    if (!anchor || !anchor.targetContainer) {
+      return null;
+    }
+
+    let host = document.getElementById(ACTION_HOST_ID);
+    if (!host) {
+      host = document.createElement('div');
+      host.id = ACTION_HOST_ID;
+      host.dataset.nlmIgnore = 'true';
+      host.style.cssText = `
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-left: 12px;
+      `;
+    }
+
+    if (!host.isConnected) {
+      const { notebookTitle, targetContainer } = anchor;
+      if (notebookTitle && notebookTitle.nextSibling) {
+        targetContainer.insertBefore(host, notebookTitle.nextSibling);
+      } else {
+        targetContainer.appendChild(host);
+      }
+    }
+
+    return host;
+  }
+
+  function addFloatingFallback(element, top, left) {
+    if (!element || element.isConnected) {
+      return;
+    }
+
+    element.style.position = 'fixed';
+    element.style.top = top;
+    element.style.left = left;
+    element.style.zIndex = '10000';
+    document.body.appendChild(element);
+  }
+
   function getSelectedSources() {
     const selected = [];
     const containers = document.querySelectorAll('.single-source-container');
 
-    containers.forEach(container => {
-      // Check if this source is selected (checkbox is checked)
+    containers.forEach((container) => {
       const checkbox = container.querySelector('mat-checkbox');
       const isChecked = checkbox?.classList?.contains('mat-mdc-checkbox-checked') ||
-                        container.querySelector('input[type="checkbox"]:checked') !== null;
+        container.querySelector('input[type="checkbox"]:checked') !== null;
 
-      if (isChecked) {
-        // Extract source ID from the menu button ID: source-item-more-button-{UUID}
-        const menuButton = container.querySelector('[id^="source-item-more-button-"]');
-        if (menuButton) {
-          const buttonId = menuButton.getAttribute('id');
-          const sourceId = buttonId.replace('source-item-more-button-', '');
-          if (sourceId && sourceId.match(/^[a-f0-9-]{36}$/i)) {
-            selected.push(sourceId);
-          }
-        }
+      if (!isChecked) {
+        return;
+      }
 
-        // Alternative: look for UUID in the container HTML
-        if (selected.length === 0 || !selected[selected.length - 1]) {
-          const html = container.outerHTML;
-          const uuidMatch = html.match(/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/i);
-          if (uuidMatch && !selected.includes(uuidMatch[0])) {
-            selected.push(uuidMatch[0]);
-          }
+      const menuButton = container.querySelector('[id^="source-item-more-button-"]');
+      if (menuButton) {
+        const buttonId = menuButton.getAttribute('id');
+        const sourceId = buttonId.replace('source-item-more-button-', '');
+        if (sourceId && sourceId.match(/^[a-f0-9-]{36}$/i)) {
+          selected.push(sourceId);
+          return;
         }
+      }
+
+      const html = container.outerHTML;
+      const uuidMatch = html.match(/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/i);
+      if (uuidMatch && !selected.includes(uuidMatch[0])) {
+        selected.push(uuidMatch[0]);
       }
     });
 
-    return [...new Set(selected)]; // Remove duplicates
+    return [...new Set(selected)];
   }
 
-  // Get notebook ID from URL
-  function getNotebookId() {
-    const match = window.location.pathname.match(/\/notebook\/([a-f0-9-]+)/i);
-    return match ? match[1] : null;
-  }
-
-  // Create the delete button
   function createDeleteButton() {
-    if (deleteButton) return deleteButton;
+    if (deleteButton) {
+      return deleteButton;
+    }
 
     deleteButton = document.createElement('button');
     deleteButton.id = 'nlm-bulk-delete-btn';
-    deleteButton.innerHTML = '🗑️ Delete Selected';
+    deleteButton.dataset.nlmIgnore = 'true';
+    deleteButton.innerHTML = `🗑️ ${t('deleteSelected')}`;
     deleteButton.style.cssText = `
       display: none;
       align-items: center;
       gap: 8px;
-      background: rgba(255, 59, 48, 0.15);
-      color: #FF3B30;
-      border: 1px solid rgba(255, 59, 48, 0.3);
-      border-radius: 50px;
+      background: rgba(243, 139, 168, 0.12);
+      color: #f38ba8;
+      border: 1px solid rgba(243, 139, 168, 0.25);
+      border-radius: 8px;
       padding: 10px 20px;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 600;
       cursor: pointer;
-      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Google Sans', Roboto, sans-serif;
-      transition: all 0.2s ease;
-      margin-left: 12px;
+      font-family: 'Fira Code', 'Google Sans', Roboto, monospace;
+      transition: background 0.2s ease, border-color 0.2s ease;
       white-space: nowrap;
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      box-shadow: 0 4px 16px rgba(255, 59, 48, 0.2);
     `;
 
     deleteButton.addEventListener('mouseenter', () => {
-      deleteButton.style.background = 'rgba(255, 59, 48, 0.25)';
-      deleteButton.style.borderColor = 'rgba(255, 59, 48, 0.5)';
-      deleteButton.style.transform = 'translateY(-2px)';
-      deleteButton.style.boxShadow = '0 6px 20px rgba(255, 59, 48, 0.3)';
+      deleteButton.style.background = 'rgba(243, 139, 168, 0.2)';
+      deleteButton.style.borderColor = 'rgba(243, 139, 168, 0.4)';
     });
 
     deleteButton.addEventListener('mouseleave', () => {
-      deleteButton.style.background = 'rgba(255, 59, 48, 0.15)';
-      deleteButton.style.borderColor = 'rgba(255, 59, 48, 0.3)';
-      deleteButton.style.transform = 'translateY(0)';
-      deleteButton.style.boxShadow = '0 4px 16px rgba(255, 59, 48, 0.2)';
+      deleteButton.style.background = 'rgba(243, 139, 168, 0.12)';
+      deleteButton.style.borderColor = 'rgba(243, 139, 168, 0.25)';
     });
 
     deleteButton.addEventListener('click', handleDeleteClick);
-
-    // Insert button into the header bar next to notebook title
-    insertButtonIntoHeader();
-
     return deleteButton;
   }
 
-  // Insert button into the header area
-  function insertButtonIntoHeader() {
-    if (!deleteButton) return;
+  function mountDeleteButton() {
+    const button = createDeleteButton();
+    const host = ensureActionHost();
 
-    // Try to find the header area with notebook title
-    const headerSelectors = [
-      '.notebook-title-container',
-      '[class*="notebook-name"]',
-      'header',
-      '.mat-toolbar',
-      '[class*="header"]'
-    ];
-
-    // Find the container with the notebook title (left side of header)
-    const notebookTitle = document.querySelector('h1, [class*="title"]');
-    let targetContainer = null;
-
-    if (notebookTitle) {
-      // Look for a flex container parent
-      let parent = notebookTitle.parentElement;
-      for (let i = 0; i < 5 && parent; i++) {
-        if (parent.style.display === 'flex' ||
-            getComputedStyle(parent).display === 'flex' ||
-            parent.className?.includes('header') ||
-            parent.className?.includes('toolbar')) {
-          targetContainer = parent;
-          break;
-        }
-        parent = parent.parentElement;
-      }
+    if (host && !host.contains(button)) {
+      host.appendChild(button);
+      button.style.position = 'static';
+      button.style.top = '';
+      button.style.left = '';
+      return;
     }
 
-    if (targetContainer && !targetContainer.contains(deleteButton)) {
-      // Insert after the title element
-      if (notebookTitle.nextSibling) {
-        targetContainer.insertBefore(deleteButton, notebookTitle.nextSibling);
-      } else {
-        targetContainer.appendChild(deleteButton);
-      }
-    } else {
-      // Fallback: append to body with fixed positioning near header
-      deleteButton.style.position = 'fixed';
-      deleteButton.style.top = '130px';
-      deleteButton.style.left = '180px';
-      deleteButton.style.zIndex = '10000';
-      document.body.appendChild(deleteButton);
-    }
+    addFloatingFallback(button, '130px', '180px');
   }
 
-  // Handle delete button click
   async function handleDeleteClick() {
     const selectedSources = getSelectedSources();
     const notebookId = getNotebookId();
 
     if (selectedSources.length === 0 || !notebookId) {
-      console.log('No sources selected or notebook ID not found');
       return;
     }
 
-    // Confirm deletion
-    const lang = document.documentElement.lang || 'en';
-    const confirmMsg = lang.startsWith('ru')
+    const lang = getLang();
+    const confirmMsg = lang === 'ru'
       ? `Удалить ${selectedSources.length} источник(ов)? Это действие нельзя отменить.`
       : `Delete ${selectedSources.length} source(s)? This cannot be undone.`;
 
@@ -186,128 +566,100 @@
       return;
     }
 
-    // Show loading state
     deleteButton.disabled = true;
-    const deletingText = lang.startsWith('ru') ? 'Удаление...' : 'Deleting...';
-    deleteButton.innerHTML = '⏳ ' + deletingText;
+    deleteButton.innerHTML = `⏳ ${t('deleting')}`;
     deleteButton.style.opacity = '0.6';
     deleteButton.style.cursor = 'wait';
 
     try {
-      // Check if extension context is still valid
       if (!chrome.runtime || !chrome.runtime.sendMessage) {
-        const reloadMsg = lang.startsWith('ru')
-          ? 'Расширение было обновлено. Пожалуйста, перезагрузите страницу (F5).'
-          : 'Extension was updated. Please reload the page (F5).';
-        alert(reloadMsg);
-        resetButton();
+        alert(t('extensionReload'));
+        resetDeleteButton();
         return;
       }
 
-      // Send delete request to background script
       const response = await chrome.runtime.sendMessage({
         cmd: 'delete-sources',
-        notebookId: notebookId,
+        notebookId,
         sourceIds: selectedSources
       });
 
-      if (response && response.error) {
-        alert('Error: ' + response.error);
-        resetButton();
-      } else if (!response) {
-        const reloadMsg = lang.startsWith('ru')
-          ? 'Нет ответа от расширения. Перезагрузите страницу (F5).'
-          : 'No response from extension. Please reload the page (F5).';
-        alert(reloadMsg);
-        resetButton();
-      } else {
-        // Show success
-        const successCount = response.successCount || selectedSources.length;
-        const successMsg = lang.startsWith('ru')
-          ? `✓ Удалено: ${successCount}`
-          : `✓ Deleted: ${successCount}`;
-
-        deleteButton.innerHTML = successMsg;
-
-        // Reload page after short delay
-        setTimeout(() => {
-          window.location.reload();
-        }, 1000);
+      if (response?.error) {
+        alert(`Error: ${response.error}`);
+        resetDeleteButton();
+        return;
       }
+
+      if (!response) {
+        alert(t('noResponse'));
+        resetDeleteButton();
+        return;
+      }
+
+      const successCount = response.successCount || selectedSources.length;
+      deleteButton.innerHTML = lang === 'ru'
+        ? `✓ Удалено: ${successCount}`
+        : `✓ Deleted: ${successCount}`;
+
+      setTimeout(() => window.location.reload(), 1000);
     } catch (error) {
-      console.error('Delete error:', error);
-      const lang = document.documentElement.lang || 'en';
-
-      // Check if it's an extension context invalidation error
       if (error.message && (error.message.includes('sendMessage') || error.message.includes('Extension context'))) {
-        const reloadMsg = lang.startsWith('ru')
-          ? 'Расширение было обновлено. Перезагрузите страницу (F5).'
-          : 'Extension was updated. Please reload the page (F5).';
-        alert(reloadMsg);
+        alert(t('extensionReload'));
       } else {
-        alert('Error: ' + error.message);
+        alert(`Error: ${error.message}`);
       }
-      resetButton();
+      resetDeleteButton();
     }
   }
 
-  // Reset button to default state
-  function resetButton() {
-    if (!deleteButton) return;
-    deleteButton.disabled = false;
-    deleteButton.style.opacity = '1';
-    deleteButton.style.cursor = 'pointer';
-    deleteButton.style.background = 'rgba(255, 59, 48, 0.15)';
-    deleteButton.style.transform = 'translateY(0)';
-    deleteButton.style.boxShadow = '0 4px 16px rgba(255, 59, 48, 0.2)';
-    updateButtonVisibility();
-  }
-
-  // Update button visibility based on selection
-  function updateButtonVisibility() {
-    if (!isEnabled) {
-      if (deleteButton) deleteButton.style.display = 'none';
+  function resetDeleteButton() {
+    if (!deleteButton) {
       return;
     }
 
-    const selectedSources = getSelectedSources();
+    deleteButton.disabled = false;
+    deleteButton.style.opacity = '1';
+    deleteButton.style.cursor = 'pointer';
+    deleteButton.style.background = 'rgba(243, 139, 168, 0.12)';
+    updateDeleteButtonVisibility();
+  }
 
-    if (!deleteButton) {
-      createDeleteButton();
+  function updateDeleteButtonVisibility() {
+    if (!isEnabled) {
+      if (deleteButton) {
+        deleteButton.style.display = 'none';
+      }
+      return;
     }
 
+    mountDeleteButton();
+
+    const selectedSources = getSelectedSources();
     if (selectedSources.length > 0) {
-      const lang = document.documentElement.lang || 'en';
-      const text = lang.startsWith('ru')
+      deleteButton.innerHTML = getLang() === 'ru'
         ? `🗑️ Удалить (${selectedSources.length})`
         : `🗑️ Delete (${selectedSources.length})`;
-
-      deleteButton.innerHTML = text;
       deleteButton.style.display = 'flex';
       deleteButton.disabled = false;
       deleteButton.style.opacity = '1';
-      deleteButton.style.background = 'rgba(255, 59, 48, 0.15)';
       deleteButton.style.cursor = 'pointer';
-      deleteButton.style.transform = 'translateY(0)';
-      deleteButton.style.boxShadow = '0 4px 16px rgba(255, 59, 48, 0.2)';
     } else {
       deleteButton.style.display = 'none';
     }
   }
 
-  // ============================================
-  // Sync Button — refresh Google Drive sources
-  // ============================================
-
-  const SYNC_ICON_SVG = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6"/><path d="M2.5 22v-6h6"/><path d="M2.5 11.5a10 10 0 0 1 18.4-4.3L21.5 8"/><path d="M21.5 12.5a10 10 0 0 1-18.4 4.3L2.5 16"/></svg>`;
+  const SYNC_ICON_SVG = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6"/><path d="M2.5 22v-6h6"/><path d="M2.5 11.5a10 10 0 0 1 18.4-4.3L21.5 8"/><path d="M21.5 12.5a10 10 0 0 1-18.4 4.3L2.5 16"/></svg>';
 
   function createSyncButton() {
-    if (syncButton) return syncButton;
+    if (syncButton) {
+      return syncButton;
+    }
 
     syncButton = document.createElement('button');
     syncButton.id = 'nlm-sync-drive-btn';
+    syncButton.dataset.nlmIgnore = 'true';
     syncButton.innerHTML = SYNC_ICON_SVG;
-    syncButton.title = getLang() === 'ru' ? 'Синхронизировать Google Drive источники' : 'Sync Google Drive sources';
+    syncButton.title = t('syncDriveSources');
     syncButton.style.cssText = `
       display: flex;
       align-items: center;
@@ -315,26 +667,26 @@
       width: 28px;
       height: 28px;
       background: transparent;
-      color: #9aa0a6;
+      color: #6c7086;
       border: none;
-      border-radius: 50%;
+      border-radius: 6px;
       cursor: pointer;
       padding: 0;
-      transition: all 0.2s ease;
+      transition: background 0.2s ease, color 0.2s ease;
       flex-shrink: 0;
     `;
 
     syncButton.addEventListener('mouseenter', () => {
       if (!isSyncing) {
-        syncButton.style.background = 'rgba(138, 180, 248, 0.12)';
-        syncButton.style.color = '#8ab4f8';
+        syncButton.style.background = 'rgba(137, 180, 250, 0.12)';
+        syncButton.style.color = '#89b4fa';
       }
     });
 
     syncButton.addEventListener('mouseleave', () => {
       if (!isSyncing) {
         syncButton.style.background = 'transparent';
-        syncButton.style.color = '#9aa0a6';
+        syncButton.style.color = '#6c7086';
       }
     });
 
@@ -342,119 +694,98 @@
     return syncButton;
   }
 
-  function getLang() {
-    return (document.documentElement.lang || navigator.language || 'en').substring(0, 2);
-  }
-
   function insertSyncButton() {
-    if (!syncButton) return;
-    if (syncButton.parentElement) return; // Already inserted
+    const button = createSyncButton();
+    if (button.parentElement) {
+      return;
+    }
 
-    // Find the "Источники" / "Sources" heading
     const headings = document.querySelectorAll('h2, h3, [class*="heading"], [class*="title"]');
     let sourcesHeading = null;
-    for (const h of headings) {
-      const text = (h.textContent || '').trim().toLowerCase();
-      if (text === 'источники' || text === 'sources') {
-        sourcesHeading = h;
+    for (const heading of headings) {
+      const text = normalizeText(heading.textContent).toLowerCase();
+      if (text === 'sources' || text === 'источники') {
+        sourcesHeading = heading;
         break;
       }
     }
 
-    if (sourcesHeading) {
-      // Find the parent container (flex row with heading + collapse icon)
-      let container = sourcesHeading.parentElement;
-      if (container) {
-        // Insert before the last direct child (collapse icon DIV)
-        const lastChild = container.lastElementChild;
-        if (lastChild && lastChild !== sourcesHeading && lastChild !== syncButton) {
-          container.insertBefore(syncButton, lastChild);
-        } else {
-          container.appendChild(syncButton);
-        }
-        return;
+    if (sourcesHeading?.parentElement) {
+      const container = sourcesHeading.parentElement;
+      const lastChild = container.lastElementChild;
+      if (lastChild && lastChild !== sourcesHeading && lastChild !== button) {
+        container.insertBefore(button, lastChild);
+      } else {
+        container.appendChild(button);
       }
+      return;
     }
 
-    // Fallback: fixed position near the sources header
-    syncButton.style.position = 'fixed';
-    syncButton.style.top = '90px';
-    syncButton.style.left = '350px';
-    syncButton.style.zIndex = '10000';
-    document.body.appendChild(syncButton);
+    addFloatingFallback(button, '90px', '350px');
   }
 
   async function handleSyncClick() {
-    if (isSyncing) return;
+    if (isSyncing) {
+      return;
+    }
+
     const notebookId = getNotebookId();
-    if (!notebookId) return;
+    if (!notebookId) {
+      return;
+    }
 
-    const lang = getLang();
     isSyncing = true;
-
-    // Show spinning animation
-    syncButton.style.color = '#8ab4f8';
+    syncButton.style.color = '#89b4fa';
     syncButton.style.animation = 'nlm-spin 1s linear infinite';
     syncButton.disabled = true;
     syncButton.style.cursor = 'wait';
-    syncButton.title = lang === 'ru' ? 'Синхронизация...' : 'Syncing...';
+    syncButton.title = t('syncing');
 
-    // Add keyframe animation if not present
-    if (!document.getElementById('nlm-sync-styles')) {
-      const style = document.createElement('style');
-      style.id = 'nlm-sync-styles';
-      style.textContent = `@keyframes nlm-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`;
-      document.head.appendChild(style);
-    }
+    ensureStyleSheet();
 
     try {
       if (!chrome.runtime || !chrome.runtime.sendMessage) {
-        showSyncToast(lang === 'ru' ? 'Перезагрузите страницу (F5)' : 'Reload the page (F5)', 'error');
-        resetSyncButton();
+        showToast(t('extensionReload'), 'error');
         return;
       }
 
       const response = await chrome.runtime.sendMessage({
         cmd: 'sync-drive-sources',
-        notebookId: notebookId
+        notebookId
       });
 
-      if (response && response.error) {
-        showSyncToast('Error: ' + response.error, 'error');
-      } else if (response && response.success) {
-        const r = response.results;
-        const driveTotal = r.synced + r.fresh + r.errors;
+      if (response?.error) {
+        showToast(`Error: ${response.error}`, 'error');
+      } else if (response?.success) {
+        const results = response.results;
+        const driveTotal = results.synced + results.fresh + results.errors;
 
         if (driveTotal === 0) {
-          showSyncToast(
-            lang === 'ru' ? 'Нет источников Google Drive' : 'No Google Drive sources found',
-            'info'
-          );
-        } else if (r.synced > 0) {
-          showSyncToast(
-            lang === 'ru'
-              ? `Синхронизировано: ${r.synced}, актуальны: ${r.fresh}`
-              : `Synced: ${r.synced}, up-to-date: ${r.fresh}`,
+          showToast(getLang() === 'ru' ? 'Нет источников Google Drive' : 'No Google Drive sources found', 'info');
+        } else if (results.synced > 0) {
+          showToast(
+            getLang() === 'ru'
+              ? `Синхронизировано: ${results.synced}, актуальны: ${results.fresh}`
+              : `Synced: ${results.synced}, up-to-date: ${results.fresh}`,
             'success'
           );
-          // Reload after a delay to reflect changes
           setTimeout(() => window.location.reload(), 1500);
         } else {
-          showSyncToast(
-            lang === 'ru'
-              ? `Все ${r.fresh} Drive-источник(ов) актуальны`
-              : `All ${r.fresh} Drive source(s) up-to-date`,
+          showToast(
+            getLang() === 'ru'
+              ? `Все ${results.fresh} Drive-источник(ов) актуальны`
+              : `All ${results.fresh} Drive source(s) up-to-date`,
             'success'
           );
         }
       } else {
-        showSyncToast(lang === 'ru' ? 'Нет ответа' : 'No response', 'error');
+        showToast(getLang() === 'ru' ? 'Нет ответа' : 'No response', 'error');
       }
     } catch (error) {
       if (error.message && (error.message.includes('sendMessage') || error.message.includes('Extension context'))) {
-        showSyncToast(getLang() === 'ru' ? 'Перезагрузите страницу (F5)' : 'Reload the page (F5)', 'error');
+        showToast(t('extensionReload'), 'error');
       } else {
-        showSyncToast('Error: ' + error.message, 'error');
+        showToast(`Error: ${error.message}`, 'error');
       }
     } finally {
       resetSyncButton();
@@ -463,30 +794,34 @@
 
   function resetSyncButton() {
     isSyncing = false;
-    if (!syncButton) return;
+    if (!syncButton) {
+      return;
+    }
+
     syncButton.disabled = false;
     syncButton.style.cursor = 'pointer';
     syncButton.style.animation = 'none';
-    syncButton.style.color = '#9aa0a6';
+    syncButton.style.color = '#6c7086';
     syncButton.style.background = 'transparent';
-    const lang = getLang();
-    syncButton.title = lang === 'ru' ? 'Синхронизировать Google Drive источники' : 'Sync Google Drive sources';
+    syncButton.title = t('syncDriveSources');
   }
 
-  function showSyncToast(message, type) {
-    // Remove existing toast
+  function showToast(message, type) {
     const existing = document.getElementById('nlm-sync-toast');
-    if (existing) existing.remove();
+    if (existing) {
+      existing.remove();
+    }
 
     const toast = document.createElement('div');
     toast.id = 'nlm-sync-toast';
+    toast.dataset.nlmIgnore = 'true';
 
     const colors = {
-      success: { bg: 'rgba(52, 168, 83, 0.9)', border: 'rgba(52, 168, 83, 0.5)' },
-      error: { bg: 'rgba(234, 67, 53, 0.9)', border: 'rgba(234, 67, 53, 0.5)' },
-      info: { bg: 'rgba(66, 133, 244, 0.9)', border: 'rgba(66, 133, 244, 0.5)' }
+      success: { bg: '#313244', border: 'rgba(166, 227, 161, 0.3)', text: '#a6e3a1' },
+      error: { bg: '#313244', border: 'rgba(243, 139, 168, 0.3)', text: '#f38ba8' },
+      info: { bg: '#313244', border: 'rgba(137, 180, 250, 0.3)', text: '#89b4fa' }
     };
-    const c = colors[type] || colors.info;
+    const color = colors[type] || colors.info;
 
     toast.textContent = message;
     toast.style.cssText = `
@@ -494,16 +829,15 @@
       bottom: 24px;
       left: 50%;
       transform: translateX(-50%);
-      background: ${c.bg};
-      color: #fff;
-      border: 1px solid ${c.border};
+      background: ${color.bg};
+      color: ${color.text};
+      border: 1px solid ${color.border};
       border-radius: 8px;
       padding: 10px 20px;
       font-size: 13px;
-      font-family: 'Google Sans', Roboto, sans-serif;
+      font-family: 'Fira Code', 'Google Sans', Roboto, monospace;
       z-index: 99999;
-      backdrop-filter: blur(10px);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
       transition: opacity 0.3s ease;
     `;
     document.body.appendChild(toast);
@@ -514,35 +848,1075 @@
     }, 3000);
   }
 
-  function setupSyncButton() {
-    if (!isSyncEnabled) return;
-    const notebookId = getNotebookId();
-    if (!notebookId) {
-      if (syncButton) syncButton.style.display = 'none';
+  function ensureStyleSheet() {
+    if (document.getElementById(EXTENSION_STYLE_ID)) {
       return;
     }
 
-    if (!syncButton) {
-      createSyncButton();
-    }
+    const style = document.createElement('style');
+    style.id = EXTENSION_STYLE_ID;
+    style.textContent = `
+      @keyframes nlm-spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
 
-    syncButton.style.display = 'flex';
-    insertSyncButton();
+      artifact-library-note {
+        display: flex !important;
+        align-items: stretch;
+        position: relative;
+      }
+
+      artifact-library-note .artifact-item-button {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .${NOTE_WRAPPER_CLASS} {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        width: 28px;
+        padding: 0;
+        margin: 0;
+        cursor: pointer;
+        border-right: 1px solid #45475a;
+        background: transparent;
+        transition: background 0.15s ease;
+      }
+
+      .${NOTE_WRAPPER_CLASS}:hover {
+        background: rgba(203, 166, 247, 0.08);
+      }
+
+      .${NOTE_WRAPPER_CLASS} input[type="checkbox"] {
+        width: 14px;
+        height: 14px;
+        accent-color: #cba6f7;
+        cursor: pointer;
+        margin: 0;
+      }
+
+      .${NOTE_BADGE_CLASS} {
+        display: none;
+      }
+
+      .nlm-note-selected {
+        outline: 2px solid rgba(203, 166, 247, 0.25);
+        outline-offset: -2px;
+        border-radius: 8px;
+      }
+
+      #${EXPORT_BAR_ID} {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 14px;
+        border-radius: 8px;
+        background: #313244;
+        border: 1px solid #45475a;
+        color: #cdd6f4;
+        font-family: 'Fira Code', 'Google Sans', Roboto, monospace;
+      }
+
+      #${EXPORT_BUTTON_ID} {
+        border: none;
+        background: #89b4fa;
+        color: #1e1e2e;
+        padding: 9px 14px;
+        border-radius: 8px;
+        font: 600 13px/1 'Fira Code', 'Google Sans', Roboto, monospace;
+        cursor: pointer;
+        transition: background 0.2s ease;
+      }
+
+      #${EXPORT_BUTTON_ID}:hover:not([disabled]) {
+        background: #b4befe;
+      }
+
+      #${EXPORT_BUTTON_ID}[disabled] {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+
+      #${EXPORT_COUNT_ID} {
+        font: 600 12px/1 'Fira Code', 'Google Sans', Roboto, monospace;
+        white-space: nowrap;
+        color: #a6adc8;
+      }
+
+      #${EXPORT_STATUS_PANEL_ID} {
+        display: none;
+        flex: 1 1 100%;
+        margin-top: 10px;
+        padding: 14px 16px;
+        border-radius: 8px;
+        background: #1e1e2e;
+        border: 1px solid #45475a;
+        border-left: 3px solid #89b4fa;
+        color: #cdd6f4;
+        font-family: 'Fira Code', 'Google Sans', Roboto, monospace;
+      }
+
+      #${EXPORT_STATUS_TITLE_ID} {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 8px;
+        font: 700 13px/1.3 'Fira Code', 'Google Sans', Roboto, monospace;
+        color: #89b4fa;
+      }
+
+      #${EXPORT_STATUS_SUMMARY_ID} {
+        margin-bottom: 10px;
+        font: 500 12px/1.45 'Fira Code', 'Google Sans', Roboto, monospace;
+        color: #bac2de;
+      }
+
+      #${EXPORT_STATUS_LIST_ID} {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .nlm-export-result-row {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 10px 12px;
+        border-radius: 8px;
+        background: #313244;
+        border: 1px solid #45475a;
+      }
+
+      .nlm-export-result-row[data-status="success"] {
+        border-color: rgba(166, 227, 161, 0.3);
+      }
+
+      .nlm-export-result-row[data-status="error"] {
+        border-color: rgba(243, 139, 168, 0.3);
+      }
+
+      .nlm-export-result-title {
+        flex: 1 1 auto;
+        min-width: 0;
+        font: 600 12px/1.35 'Fira Code', 'Google Sans', Roboto, monospace;
+        color: #cdd6f4;
+      }
+
+      .nlm-export-result-meta {
+        margin-top: 3px;
+        font: 500 11px/1.35 'Fira Code', 'Google Sans', Roboto, monospace;
+        color: #6c7086;
+      }
+
+      .nlm-export-result-badge {
+        flex: 0 0 auto;
+        padding: 5px 8px;
+        border-radius: 6px;
+        font: 700 10px/1 'Fira Code', 'Google Sans', Roboto, monospace;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+      }
+
+      .nlm-export-result-badge[data-status="success"] {
+        background: rgba(166, 227, 161, 0.12);
+        color: #a6e3a1;
+      }
+
+      .nlm-export-result-badge[data-status="error"] {
+        background: rgba(243, 139, 168, 0.12);
+        color: #f38ba8;
+      }
+
+      .nlm-export-result-badge[data-status="pending"] {
+        background: rgba(137, 180, 250, 0.12);
+        color: #89b4fa;
+      }
+
+      #${EXPORT_STATUS_HINT_ID} {
+        margin-top: 10px;
+        font: 500 11px/1.45 'Fira Code', 'Google Sans', Roboto, monospace;
+        color: #6c7086;
+      }
+
+      #${EXPORT_CLEAR_BUTTON_ID} {
+        border: 1px solid #45475a;
+        background: transparent;
+        color: #89b4fa;
+        padding: 7px 10px;
+        border-radius: 6px;
+        font: 600 11px/1 'Fira Code', 'Google Sans', Roboto, monospace;
+        cursor: pointer;
+        transition: background 0.2s ease;
+      }
+
+      #${EXPORT_CLEAR_BUTTON_ID}:hover {
+        background: rgba(137, 180, 250, 0.1);
+      }
+    `;
+    document.head.appendChild(style);
   }
 
-  // Watch for DOM changes (source selection changes)
+  function hasExcludedAncestor(element) {
+    return EXCLUDED_NOTE_SELECTORS.some((selector) => element.closest(selector));
+  }
+
+  function buildCandidateList() {
+    const selector = NOTE_CONTAINER_SELECTORS.join(',');
+    const candidates = [];
+    const seen = new Set();
+
+    document.querySelectorAll(selector).forEach((element) => {
+      if (!(element instanceof HTMLElement) || seen.has(element)) {
+        return;
+      }
+      seen.add(element);
+      candidates.push(element);
+    });
+
+    return candidates;
+  }
+
+  function isLikelyExportableNote(element) {
+    if (!(element instanceof HTMLElement) || !isVisible(element)) {
+      return false;
+    }
+
+    if (hasExcludedAncestor(element)) {
+      return false;
+    }
+
+    if (element.matches('artifact-library-note') && element.querySelector('.artifact-title')) {
+      return true;
+    }
+
+    const text = normalizeText(element.innerText);
+    if (text.length < 40 || text.length > 6000) {
+      return false;
+    }
+
+    if (element.querySelector('.single-source-container')) {
+      return false;
+    }
+
+    const heading = findNoteHeading(element);
+    const contentBlocks = element.querySelectorAll('p, li, blockquote, pre').length;
+    const buttons = element.querySelectorAll('button, [role="button"]').length;
+
+    if (!heading && contentBlocks === 0 && buttons < 2) {
+      return false;
+    }
+
+    return true;
+  }
+
+  function findNoteHeading(element) {
+    for (const selector of NOTE_HEADING_SELECTORS) {
+      const heading = element.querySelector(selector);
+      const text = normalizeText(heading?.textContent);
+      if (text && text.length >= 3) {
+        return heading;
+      }
+    }
+
+    return null;
+  }
+
+  function deriveNoteKey(element, notebookId, index) {
+    const artifactTitle = element.querySelector('.artifact-title');
+    if (artifactTitle) {
+      const title = normalizeText(artifactTitle.textContent);
+      if (title.length >= 3) {
+        return stableHash(`${notebookId}:artifact:${title}`);
+      }
+    }
+
+    const explicitCandidates = [
+      element.getAttribute('data-note-id'),
+      element.getAttribute('data-note-key'),
+      element.id
+    ].filter(Boolean);
+
+    for (const candidate of explicitCandidates) {
+      if (candidate && candidate.length >= 4) {
+        return `note-${candidate}`;
+      }
+    }
+
+    const actionElement = element.querySelector('[id*="note"], [data-note-id], [aria-controls]');
+    if (actionElement) {
+      const actionId = actionElement.getAttribute('id') ||
+        actionElement.getAttribute('data-note-id') ||
+        actionElement.getAttribute('aria-controls');
+      if (actionId) {
+        return `note-${actionId}`;
+      }
+    }
+
+    const title = normalizeText(findNoteHeading(element)?.textContent);
+    const snippet = normalizeText(element.innerText).slice(0, 140);
+    return stableHash(`${notebookId}:${title}:${snippet}:${index}`);
+  }
+
+  function discoverExportableNotes() {
+    const notebookId = getNotebookScopeId();
+    const discovered = [];
+    const seenKeys = new Set();
+
+    buildCandidateList().forEach((element, index) => {
+      if (!isLikelyExportableNote(element)) {
+        return;
+      }
+
+      const key = deriveNoteKey(element, notebookId || 'unknown', index);
+      if (seenKeys.has(key)) {
+        return;
+      }
+
+      const title = normalizeText(findNoteHeading(element)?.textContent) || normalizeText(element.innerText).slice(0, 80);
+      discovered.push({
+        key,
+        title: title || `Note ${index + 1}`,
+        element,
+        index
+      });
+      seenKeys.add(key);
+    });
+
+    return discovered;
+  }
+
+  function updateNoteVisualState(note, isSelected) {
+    note.element.classList.toggle('nlm-note-selected', isSelected);
+    const existingWrapper = note.element.querySelector(`.${NOTE_WRAPPER_CLASS}`);
+    const checkbox = existingWrapper?.querySelector(`input.${NOTE_CHECKBOX_CLASS}`);
+    if (checkbox && checkbox.checked !== isSelected) {
+      checkbox.checked = isSelected;
+    }
+  }
+
+  function handleNoteCheckboxChange(noteKey, checked) {
+    const notebookId = getNotebookScopeId();
+    if (!notebookId) {
+      return;
+    }
+
+    const selectedSet = ensureSelectionSet(notebookId);
+    if (checked) {
+      selectedSet.add(noteKey);
+    } else {
+      selectedSet.delete(noteKey);
+    }
+
+    const note = noteRegistry.get(noteKey);
+    if (note) {
+      updateNoteVisualState(note, checked);
+    }
+
+    scheduleSelectionPersist(notebookId);
+    syncExportActionUi();
+  }
+
+  function injectNoteCheckbox(note) {
+    note.element.setAttribute(NOTE_KEY_ATTR, note.key);
+    note.element.setAttribute(NOTE_INDEX_ATTR, String(note.index));
+
+    let wrapper = note.element.querySelector(`.${NOTE_WRAPPER_CLASS}`);
+    if (!wrapper) {
+      wrapper = document.createElement('label');
+      wrapper.className = NOTE_WRAPPER_CLASS;
+      wrapper.dataset.nlmIgnore = 'true';
+      wrapper.setAttribute('aria-label', t('noteExportSelect'));
+
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.className = NOTE_CHECKBOX_CLASS;
+      checkbox.dataset.noteKey = note.key;
+      checkbox.addEventListener('change', (event) => {
+        handleNoteCheckboxChange(note.key, event.target.checked);
+      });
+
+      const badge = document.createElement('span');
+      badge.className = NOTE_BADGE_CLASS;
+      badge.innerHTML = `<strong>NotebookLM++</strong> ${t('noteExportBadge')}`;
+
+      wrapper.appendChild(checkbox);
+      wrapper.appendChild(badge);
+    }
+
+    if (wrapper.parentElement !== note.element) {
+      note.element.prepend(wrapper);
+    }
+
+    const selectedSet = ensureSelectionSet(getNotebookScopeId());
+    updateNoteVisualState(note, selectedSet.has(note.key));
+  }
+
+  function rebuildNoteRegistry() {
+    noteRegistry.clear();
+    discoverExportableNotes().forEach((note) => {
+      noteRegistry.set(note.key, note);
+      injectNoteCheckbox(note);
+    });
+  }
+
+  function createExportActionBar() {
+    if (exportActionBar) {
+      return exportActionBar;
+    }
+
+    exportActionBar = document.createElement('div');
+    exportActionBar.id = EXPORT_BAR_ID;
+    exportActionBar.dataset.nlmIgnore = 'true';
+
+    exportActionButton = document.createElement('button');
+    exportActionButton.id = EXPORT_BUTTON_ID;
+    exportActionButton.type = 'button';
+    exportActionButton.textContent = t('noteExportAction');
+    exportActionButton.addEventListener('click', handleExportActionClick);
+
+    exportCount = document.createElement('span');
+    exportCount.id = EXPORT_COUNT_ID;
+
+    exportActionBar.appendChild(exportActionButton);
+    exportActionBar.appendChild(exportCount);
+    return exportActionBar;
+  }
+
+  function createExportStatusPanel() {
+    if (exportStatusPanel) {
+      return exportStatusPanel;
+    }
+
+    exportStatusPanel = document.createElement('section');
+    exportStatusPanel.id = EXPORT_STATUS_PANEL_ID;
+    exportStatusPanel.dataset.nlmIgnore = 'true';
+
+    exportStatusTitle = document.createElement('div');
+    exportStatusTitle.id = EXPORT_STATUS_TITLE_ID;
+
+    const titleText = document.createElement('span');
+    titleText.textContent = t('noteExportStatusFinished');
+
+    exportClearButton = document.createElement('button');
+    exportClearButton.id = EXPORT_CLEAR_BUTTON_ID;
+    exportClearButton.type = 'button';
+    exportClearButton.textContent = t('noteExportResultsClear');
+    exportClearButton.addEventListener('click', handleClearExportResults);
+
+    exportStatusTitle.appendChild(titleText);
+    exportStatusTitle.appendChild(exportClearButton);
+
+    exportStatusSummary = document.createElement('div');
+    exportStatusSummary.id = EXPORT_STATUS_SUMMARY_ID;
+
+    exportStatusList = document.createElement('div');
+    exportStatusList.id = EXPORT_STATUS_LIST_ID;
+
+    exportStatusHint = document.createElement('div');
+    exportStatusHint.id = EXPORT_STATUS_HINT_ID;
+
+    exportStatusPanel.appendChild(exportStatusTitle);
+    exportStatusPanel.appendChild(exportStatusSummary);
+    exportStatusPanel.appendChild(exportStatusList);
+    exportStatusPanel.appendChild(exportStatusHint);
+
+    return exportStatusPanel;
+  }
+
+  function findNotesContainer() {
+    // Find the Studio panel that contains the artifact-library notes
+    const selectors = [
+      'artifact-library',
+      '.artifact-library-container',
+      '.panel-content-scrollable',
+      'section.studio-panel'
+    ];
+    for (const sel of selectors) {
+      const el = document.querySelector(sel);
+      if (el) return el;
+    }
+    return null;
+  }
+
+  function mountExportActionBar() {
+    const bar = createExportActionBar();
+
+    // Already mounted and connected — nothing to do
+    if (bar.isConnected) return;
+
+    // Mount above the notes container in the Studio panel
+    const notesContainer = findNotesContainer();
+    if (notesContainer && notesContainer.parentElement) {
+      notesContainer.parentElement.insertBefore(bar, notesContainer);
+      bar.style.cssText = 'position:static;margin:0 12px 8px';
+      return;
+    }
+
+    // Fallback: try the action host
+    const host = ensureActionHost();
+    if (host) {
+      host.prepend(bar);
+      bar.style.cssText = 'position:static';
+      return;
+    }
+
+    addFloatingFallback(bar, '130px', '420px');
+  }
+
+  function mountExportStatusPanel() {
+    const panel = createExportStatusPanel();
+
+    // Already mounted and connected — nothing to do
+    if (panel.isConnected) return;
+
+    // Mount right after the export bar
+    const bar = document.getElementById(EXPORT_BAR_ID);
+    if (bar && bar.parentElement) {
+      bar.parentElement.insertBefore(panel, bar.nextSibling);
+      panel.style.cssText = 'position:static;margin:0 12px 8px';
+      return;
+    }
+
+    const host = ensureActionHost();
+    if (host) {
+      host.appendChild(panel);
+      panel.style.cssText = 'position:static';
+      return;
+    }
+
+    addFloatingFallback(panel, '190px', '420px');
+  }
+
+  function getSelectedNotes() {
+    const notebookId = getNotebookScopeId();
+    if (!notebookId) {
+      return [];
+    }
+
+    const selectedSet = ensureSelectionSet(notebookId);
+    return Array.from(selectedSet)
+      .map((noteKey) => noteRegistry.get(noteKey))
+      .filter(Boolean)
+      .map((note) => ({
+        key: note.key,
+        title: note.title,
+        index: note.index
+      }));
+  }
+
+  function syncExportActionUi() {
+    mountExportActionBar();
+    mountExportStatusPanel();
+
+    const notebookId = getNotebookScopeId();
+    const selectedSet = notebookId ? ensureSelectionSet(notebookId) : new Set();
+    const selectedCount = selectedSet.size;
+    const hasNotes = noteRegistry.size > 0;
+
+    exportActionBar.style.display = hasNotes ? 'flex' : 'none';
+    exportActionButton.disabled = selectedCount === 0 || exportInProgress;
+    exportActionButton.textContent = selectedCount > 0
+      ? `${t('noteExportAction')} (${selectedCount})`
+      : t('noteExportAction');
+    exportCount.textContent = selectedCount > 0
+      ? `${selectedCount} ${t('noteExportSelected')}`
+      : t('noteExportUnavailable');
+    renderExportStatusPanel();
+  }
+
+  function getAccessibleText(element) {
+    if (!element || !(element instanceof HTMLElement)) {
+      return '';
+    }
+
+    const values = [
+      element.getAttribute('aria-label'),
+      element.getAttribute('title'),
+      element.getAttribute('data-tooltip'),
+      element.textContent
+    ].filter(Boolean);
+
+    return normalizeText(values.join(' ')).toLowerCase();
+  }
+
+  function isVisibleClickable(element) {
+    if (!(element instanceof HTMLElement) || !isVisible(element)) {
+      return false;
+    }
+
+    if (element.disabled || element.getAttribute('aria-disabled') === 'true') {
+      return false;
+    }
+
+    return true;
+  }
+
+  function findCandidateButtons(root) {
+    if (!(root instanceof HTMLElement)) {
+      return [];
+    }
+
+    return Array.from(root.querySelectorAll('button, [role="button"], [role="menuitem"], [aria-label], [title]'))
+      .filter((element) => isVisibleClickable(element) && !element.closest('[data-nlm-ignore="true"]'));
+  }
+
+  function findNativeExportButton(noteElement) {
+    const artifactMenuButton = noteElement.querySelector('.artifact-more-button');
+    if (artifactMenuButton && isVisibleClickable(artifactMenuButton)) {
+      return { type: 'menu', element: artifactMenuButton };
+    }
+
+    const directPatterns = [
+      /google docs/i,
+      /\bdocs\b/i,
+      /export/i,
+      /документ/i,
+      /экспорт/i
+    ];
+
+    const menuPatterns = [
+      /more/i,
+      /options/i,
+      /actions/i,
+      /menu/i,
+      /ещ[её]/i,
+      /действ/i
+    ];
+
+    const buttons = findCandidateButtons(noteElement);
+    const directMatch = buttons.find((button) => {
+      const text = getAccessibleText(button);
+      return directPatterns.some((pattern) => pattern.test(text));
+    });
+
+    if (directMatch) {
+      return { type: 'direct', element: directMatch };
+    }
+
+    const menuMatch = buttons.find((button) => {
+      const text = getAccessibleText(button);
+      return menuPatterns.some((pattern) => pattern.test(text));
+    });
+
+    if (menuMatch) {
+      return { type: 'menu', element: menuMatch };
+    }
+
+    return null;
+  }
+
+  function findNativeMenuExportItem() {
+    const visibleMenus = Array.from(document.querySelectorAll('[role="menu"].mat-mdc-menu-panel, [role="menu"]'))
+      .filter((menu) => isVisible(menu));
+
+    for (const menu of visibleMenus) {
+      const items = Array.from(menu.querySelectorAll('[role="menuitem"], button'))
+        .filter((item) => isVisibleClickable(item) && !(item.id && item.id.startsWith('nlm-')));
+
+      const iconMatch = items.find((item) => {
+        const icon = item.querySelector('mat-icon');
+        return normalizeText(icon?.textContent) === 'drive_document';
+      });
+      if (iconMatch) {
+        return iconMatch;
+      }
+
+      const textMatch = items.find((item) => {
+        const text = getAccessibleText(item);
+        return /google docs|\bdocs\b|export|документ|экспорт/i.test(text);
+      });
+      if (textMatch) {
+        return textMatch;
+      }
+    }
+
+    return null;
+  }
+
+  async function triggerNativeNoteExport(note) {
+    const noteElement = note?.element;
+    if (!(noteElement instanceof HTMLElement)) {
+      return { success: false, reason: 'note_missing' };
+    }
+
+    noteElement.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    await wait(180);
+
+    const nativeTrigger = findNativeExportButton(noteElement);
+    if (!nativeTrigger) {
+      return { success: false, reason: 'native_control_missing' };
+    }
+
+    nativeTrigger.element.click();
+
+    if (nativeTrigger.type === 'direct') {
+      await wait(800);
+      return { success: true, mode: 'direct' };
+    }
+
+    await wait(250);
+    const menuItem = findNativeMenuExportItem();
+    if (!menuItem) {
+      return { success: false, reason: 'native_menu_item_missing' };
+    }
+
+    menuItem.click();
+    await wait(900);
+    return { success: true, mode: 'menu' };
+  }
+
+  async function storeExportBatchResult(notebookId, results) {
+    latestExportBatch = {
+      notebookId,
+      results,
+      total: results.length,
+      successCount: results.filter((result) => result.success).length,
+      failedCount: results.filter((result) => !result.success).length,
+      updatedAt: Date.now()
+    };
+
+    try {
+      await chrome.storage.local.set({
+        [EXPORT_RESULTS_STORAGE_KEY]: latestExportBatch
+      });
+    } catch (error) {
+      // Ignore storage errors for now.
+    }
+  }
+
+  async function loadPersistedExportResults(notebookId) {
+    latestExportBatch = null;
+
+    if (!notebookId) {
+      return;
+    }
+
+    try {
+      const stored = await chrome.storage.local.get([EXPORT_RESULTS_STORAGE_KEY]);
+      const batch = stored[EXPORT_RESULTS_STORAGE_KEY];
+      if (batch && batch.notebookId === notebookId && Array.isArray(batch.results)) {
+        latestExportBatch = batch;
+      }
+    } catch (error) {
+      // Ignore storage restore failures and render without persisted results.
+    }
+  }
+
+  async function handleClearExportResults() {
+    latestExportBatch = null;
+    exportProgressState = null;
+
+    try {
+      await chrome.storage.local.remove([EXPORT_RESULTS_STORAGE_KEY]);
+      if (chrome.runtime?.sendMessage) {
+        await chrome.runtime.sendMessage({ cmd: 'clear-note-export-results' });
+      }
+    } catch (error) {
+      // Keep UI cleared even if storage cleanup fails.
+    }
+
+    renderExportStatusPanel();
+  }
+
+  function formatExportTimestamp(timestamp) {
+    if (!timestamp) {
+      return '';
+    }
+
+    try {
+      return new Date(timestamp).toLocaleTimeString(getLang(), {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (error) {
+      return '';
+    }
+  }
+
+  function getResultModeLabel(result) {
+    if (result?.mode === 'direct') {
+      return t('noteExportResultModeDirect');
+    }
+
+    if (result?.mode === 'menu') {
+      return t('noteExportResultModeMenu');
+    }
+
+    return t('noteExportResultModeUnknown');
+  }
+
+  function getResultReasonLabel(result) {
+    if (!result || result.success) {
+      return getResultModeLabel(result);
+    }
+
+    if (result.reason === 'native_control_missing' || result.reason === 'native_menu_item_missing') {
+      return t('noteExportNativeMissing');
+    }
+
+    if (result.reason === 'note_missing') {
+      return 'note_missing';
+    }
+
+    return result.reason || t('noteExportResultError');
+  }
+
+  function buildExportSummaryText(summary) {
+    const pieces = [
+      `${t('noteExportProgressSummary')}: ${summary.completed}/${summary.total}`,
+      `${t('noteExportSucceededCount')}: ${summary.successCount}`,
+      `${t('noteExportFailedCount')}: ${summary.failedCount}`
+    ];
+    const timeLabel = formatExportTimestamp(summary.updatedAt || summary.startedAt);
+    if (timeLabel) {
+      pieces.push(timeLabel);
+    }
+    return pieces.join(' · ');
+  }
+
+  function renderExportResultRows(results, total) {
+    exportStatusList.replaceChildren();
+
+    const rows = Array.isArray(results) ? results.slice() : [];
+    if (rows.length === 0 && !exportInProgress) {
+      const empty = document.createElement('div');
+      empty.className = 'nlm-export-result-row';
+      empty.dataset.status = 'pending';
+      empty.textContent = t('noteExportResultsEmpty');
+      exportStatusList.appendChild(empty);
+      return;
+    }
+
+    rows.forEach((result) => {
+      const row = document.createElement('div');
+      row.className = 'nlm-export-result-row';
+      row.dataset.status = result.success ? 'success' : (result.pending ? 'pending' : 'error');
+
+      const body = document.createElement('div');
+
+      const title = document.createElement('div');
+      title.className = 'nlm-export-result-title';
+      title.textContent = result.title || result.key || 'Untitled note';
+
+      const meta = document.createElement('div');
+      meta.className = 'nlm-export-result-meta';
+      meta.textContent = result.pending
+        ? t('noteExportResultPending')
+        : getResultReasonLabel(result);
+
+      body.appendChild(title);
+      body.appendChild(meta);
+
+      const badge = document.createElement('span');
+      badge.className = 'nlm-export-result-badge';
+      badge.dataset.status = result.success ? 'success' : (result.pending ? 'pending' : 'error');
+      badge.textContent = result.success
+        ? t('noteExportResultReady')
+        : (result.pending ? `${rows.length}/${total}` : t('noteExportResultError'));
+
+      row.appendChild(body);
+      row.appendChild(badge);
+      exportStatusList.appendChild(row);
+    });
+  }
+
+  function renderExportStatusPanel() {
+    if (!exportStatusPanel || !exportStatusSummary || !exportStatusList || !exportStatusHint || !exportClearButton) {
+      return;
+    }
+
+    const notebookId = getNotebookScopeId();
+    const activeBatch = latestExportBatch && latestExportBatch.notebookId === notebookId ? latestExportBatch : null;
+    const activeProgress = exportProgressState && exportProgressState.notebookId === notebookId ? exportProgressState : null;
+
+    if (!activeProgress && !activeBatch) {
+      exportStatusPanel.style.display = 'none';
+      return;
+    }
+
+    exportStatusPanel.style.display = 'block';
+
+    const titleNode = exportStatusTitle.querySelector('span');
+    if (titleNode) {
+      titleNode.textContent = activeProgress ? t('noteExportStatusRunning') : t('noteExportStatusFinished');
+    }
+
+    exportClearButton.style.display = activeProgress ? 'none' : 'inline-flex';
+
+    if (activeProgress) {
+      exportStatusSummary.textContent = buildExportSummaryText(activeProgress);
+      const pendingRows = activeProgress.pendingTitles.map((title) => ({
+        title,
+        pending: true
+      }));
+      renderExportResultRows(activeProgress.results.concat(pendingRows), activeProgress.total);
+      exportStatusHint.textContent = t('noteExportResultsHint');
+      return;
+    }
+
+    const completed = {
+      completed: activeBatch.total || activeBatch.results.length,
+      total: activeBatch.total || activeBatch.results.length,
+      successCount: activeBatch.successCount ?? activeBatch.results.filter((result) => result.success).length,
+      failedCount: activeBatch.failedCount ?? activeBatch.results.filter((result) => !result.success).length,
+      updatedAt: activeBatch.updatedAt
+    };
+
+    exportStatusSummary.textContent = buildExportSummaryText(completed);
+    renderExportResultRows(activeBatch.results, completed.total);
+    exportStatusHint.textContent = t('noteExportResultsHint');
+  }
+
+  async function handleExportActionClick() {
+    const notebookId = getNotebookScopeId();
+    if (!notebookId) {
+      showToast(t('noteExportUnavailable'), 'error');
+      return;
+    }
+
+    const selectedNotes = getSelectedNotes();
+    if (selectedNotes.length === 0) {
+      showToast(t('noteExportEmpty'), 'info');
+      return;
+    }
+
+    if (!chrome.runtime || !chrome.runtime.sendMessage) {
+      showToast(t('extensionReload'), 'error');
+      return;
+    }
+
+    exportInProgress = true;
+    exportProgressState = {
+      notebookId,
+      total: selectedNotes.length,
+      completed: 0,
+      successCount: 0,
+      failedCount: 0,
+      results: [],
+      pendingTitles: selectedNotes.map((note) => note.title),
+      startedAt: Date.now()
+    };
+    syncExportActionUi();
+    exportCount.textContent = t('noteExportRunning');
+
+    try {
+      const response = await chrome.runtime.sendMessage({
+        cmd: 'set-note-export-selection',
+        notebookId,
+        noteKeys: selectedNotes.map((note) => note.key),
+        notes: selectedNotes,
+        source: EXPORT_ACTION_SOURCE
+      });
+
+      if (response?.error) {
+        showToast(`Error: ${response.error}`, 'error');
+        return;
+      }
+
+      const results = [];
+      for (const selectedNote of selectedNotes) {
+        const liveNote = noteRegistry.get(selectedNote.key);
+        const exportResult = await triggerNativeNoteExport(liveNote);
+        const resultEntry = {
+          key: selectedNote.key,
+          title: selectedNote.title,
+          ...exportResult
+        };
+        results.push(resultEntry);
+        exportProgressState.results.push(resultEntry);
+        exportProgressState.completed = results.length;
+        exportProgressState.successCount = results.filter((result) => result.success).length;
+        exportProgressState.failedCount = results.length - exportProgressState.successCount;
+        exportProgressState.pendingTitles = selectedNotes
+          .slice(results.length)
+          .map((note) => note.title);
+        renderExportStatusPanel();
+      }
+
+      await storeExportBatchResult(notebookId, results);
+      exportProgressState = null;
+      renderExportStatusPanel();
+
+      const successCount = results.filter((result) => result.success).length;
+      const failedCount = results.length - successCount;
+
+      if (successCount > 0 && failedCount === 0) {
+        showToast(`${t('noteExportNativeClicked')} · ${successCount}/${results.length}`, 'success');
+      } else if (successCount > 0) {
+        showToast(`${t('noteExportCompleted')} · ${successCount}/${results.length}`, 'info');
+      } else {
+        showToast(t('noteExportNativeMissing'), 'error');
+      }
+    } catch (error) {
+      showToast(`${t('noteExportFailed')}: ${error.message}`, 'error');
+      exportProgressState = null;
+      renderExportStatusPanel();
+    } finally {
+      exportInProgress = false;
+      syncExportActionUi();
+    }
+  }
+
+  function setupSyncButton() {
+    if (!isSyncEnabled) {
+      if (syncButton) {
+        syncButton.style.display = 'none';
+      }
+      return;
+    }
+
+    const notebookId = getNotebookScopeId();
+    if (!notebookId) {
+      if (syncButton) {
+        syncButton.style.display = 'none';
+      }
+      return;
+    }
+
+    insertSyncButton();
+    syncButton.style.display = 'flex';
+  }
+
+  function refreshInjectedUi() {
+    if (!getNotebookScopeId()) {
+      if (deleteButton) {
+        deleteButton.style.display = 'none';
+      }
+      if (syncButton) {
+        syncButton.style.display = 'none';
+      }
+      if (exportActionBar) {
+        exportActionBar.style.display = 'none';
+      }
+      if (exportStatusPanel) {
+        exportStatusPanel.style.display = 'none';
+      }
+      noteRegistry.clear();
+      return;
+    }
+
+    ensureStyleSheet();
+    rebuildNoteRegistry();
+    updateDeleteButtonVisibility();
+    setupSyncButton();
+    syncExportActionUi();
+  }
+
   function startObserver() {
     if (observer) {
       observer.disconnect();
     }
 
-    observer = new MutationObserver((mutations) => {
-      // Debounce updates
+    observer = new MutationObserver(() => {
       clearTimeout(observer._timeout);
-      observer._timeout = setTimeout(updateButtonVisibility, 150);
+      observer._timeout = setTimeout(refreshInjectedUi, 180);
     });
 
-    // Observe the sources panel for changes
     const config = {
       childList: true,
       subtree: true,
@@ -550,123 +1924,88 @@
       attributeFilter: ['class', 'aria-checked']
     };
 
-    // Find source panel to observe
-    const sourcePanel = document.querySelector('.source-panel') || document.body;
-    observer.observe(sourcePanel, config);
+    observer.observe(document.body, config);
   }
 
-  // Setup function - can be called multiple times for SPA navigation
-  let currentNotebookId = null;
+  async function setup() {
+    const notebookId = getNotebookScopeId();
 
-  function setup() {
-    const notebookId = getNotebookId();
-
-    // Skip if not on a notebook page
     if (!notebookId) {
-      if (deleteButton) deleteButton.style.display = 'none';
-      if (syncButton) syncButton.style.display = 'none';
-      return;
-    }
-
-    // Skip if already set up for this notebook
-    if (notebookId === currentNotebookId && deleteButton) {
+      refreshInjectedUi();
       return;
     }
 
     currentNotebookId = notebookId;
-
-    // Remove old buttons if exists
-    if (deleteButton) {
-      deleteButton.remove();
-      deleteButton = null;
-    }
-    if (syncButton) {
-      syncButton.remove();
-      syncButton = null;
-    }
-
-    createDeleteButton();
+    await loadPersistedSelection(notebookId);
+    await loadPersistedExportResults(notebookId);
+    refreshInjectedUi();
     startObserver();
-    setTimeout(updateButtonVisibility, 500);
-
-    // Setup sync button (with delay for DOM to be ready)
-    setTimeout(() => {
-      document.documentElement.setAttribute('data-nlm-sync-setup', 'fired');
-      setupSyncButton();
-      document.documentElement.setAttribute('data-nlm-sync-result', syncButton ? 'created-' + (syncButton.parentElement?.tagName || 'orphan') : 'null');
-    }, 800);
   }
 
-  // Initialize
   async function init() {
-    // DOM marker for debugging — can be checked from page context
-    document.documentElement.setAttribute('data-nlm-ext', 'v3-sync');
+    document.documentElement.setAttribute('data-nlm-ext', 'phase2-selection');
 
-    // Check sync button setting
-    try {
-      const syncResult = await chrome.storage.sync.get(['enableSyncDrive']);
-      isSyncEnabled = syncResult.enableSyncDrive !== false; // Default to true
-    } catch (e) { /* default true */ }
+    await Promise.all([checkEnabled(), checkSyncEnabled()]);
 
-    document.documentElement.setAttribute('data-nlm-sync-enabled', String(isSyncEnabled));
-
-    await checkEnabled();
-    // Even if bulk delete is disabled, we still init for sync button
-
-    // Initial setup
     if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', setup);
+      document.addEventListener('DOMContentLoaded', () => {
+        setup();
+      });
     } else {
       setup();
     }
 
-    // Watch for SPA navigation (URL changes without page reload)
     let lastUrl = location.href;
     const urlObserver = new MutationObserver(() => {
       if (location.href !== lastUrl) {
         lastUrl = location.href;
-        // Delay to let Angular render the new page
-        setTimeout(setup, 500);
+        setTimeout(() => {
+          setup();
+        }, 500);
       }
     });
     urlObserver.observe(document.body, { childList: true, subtree: true });
 
-    // Also watch for History API navigation
     const originalPushState = history.pushState;
     history.pushState = function() {
       originalPushState.apply(this, arguments);
-      setTimeout(setup, 500);
+      setTimeout(() => {
+        setup();
+      }, 500);
     };
 
     const originalReplaceState = history.replaceState;
     history.replaceState = function() {
       originalReplaceState.apply(this, arguments);
-      setTimeout(setup, 500);
+      setTimeout(() => {
+        setup();
+      }, 500);
     };
 
     window.addEventListener('popstate', () => {
-      setTimeout(setup, 500);
+      setTimeout(() => {
+        setup();
+      }, 500);
     });
 
-    // Listen for settings changes
     chrome.storage.onChanged.addListener((changes, namespace) => {
-      if (namespace === 'sync') {
-        if (changes.enableBulkDelete) {
-          isEnabled = changes.enableBulkDelete.newValue !== false;
-          updateButtonVisibility();
-        }
-        if (changes.enableSyncDrive) {
-          isSyncEnabled = changes.enableSyncDrive.newValue !== false;
-          if (syncButton) {
-            syncButton.style.display = isSyncEnabled ? 'flex' : 'none';
-          }
-        }
+      if (namespace !== 'sync') {
+        return;
+      }
+
+      if (changes.enableBulkDelete) {
+        isEnabled = changes.enableBulkDelete.newValue !== false;
+        updateDeleteButtonVisibility();
+      }
+
+      if (changes.enableSyncDrive) {
+        isSyncEnabled = changes.enableSyncDrive.newValue !== false;
+        setupSyncButton();
       }
     });
 
-    // Also update on clicks (for checkbox interactions)
     document.addEventListener('click', () => {
-      setTimeout(updateButtonVisibility, 100);
+      setTimeout(refreshInjectedUi, 100);
     });
   }
 

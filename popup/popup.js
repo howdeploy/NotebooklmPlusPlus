@@ -20,7 +20,6 @@ let notebookSelect, addBtn, addPdfBtn, newNotebookBtn, bulkBtn, tabsBtn;
 let accountSelect, statusDiv, currentUrlDiv, settingsBtn, openNotebookBtn;
 let newNotebookModal, newNotebookInput, modalCancel, modalCreate;
 let parseCommentsBtn, parseProgress, parseProgressText, cancelParseBtn;
-let exportAuthBadge, exportAuthStatus, exportAuthBtn, clearExportAuthBtn;
 
 // Current state
 let currentTab = null;
@@ -55,11 +54,6 @@ async function init() {
   parseProgress = document.getElementById('parse-progress');
   parseProgressText = document.getElementById('parse-progress-text');
   cancelParseBtn = document.getElementById('cancel-parse-btn');
-  exportAuthBadge = document.getElementById('export-auth-badge');
-  exportAuthStatus = document.getElementById('export-auth-status');
-  exportAuthBtn = document.getElementById('export-auth-btn');
-  clearExportAuthBtn = document.getElementById('clear-export-auth-btn');
-
   // Set up event listeners
   addBtn.addEventListener('click', handleAddToNotebook);
   addPdfBtn.addEventListener('click', handleAddAsPdf);
@@ -74,17 +68,10 @@ async function init() {
   modalCreate.addEventListener('click', handleCreateNotebook);
   settingsBtn.addEventListener('click', openSettings);
   openNotebookBtn.addEventListener('click', handleOpenNotebook);
-  exportAuthBtn.addEventListener('click', handleBeginExportAuth);
-  clearExportAuthBtn.addEventListener('click', handleClearExportAuth);
-  window.addEventListener('focus', () => {
-    loadExportAuthStatus();
-  });
-
   // Load initial data
   await loadCurrentTab();
   await loadAccounts();
   await loadNotebooks();
-  await loadExportAuthStatus();
   await checkActiveParse();
 }
 
@@ -94,100 +81,6 @@ function t(key, fallback) {
     return I18n.get(key) || fallback || key;
   }
   return fallback || key;
-}
-
-function getExportAuthMessage(response) {
-  if (response?.messageKey) {
-    return t(response.messageKey, response.messageKey);
-  }
-  return t('popup_exportAuthMissing', 'Not connected');
-}
-
-function renderExportAuthState(response, options = {}) {
-  if (!exportAuthBadge || !exportAuthStatus || !exportAuthBtn || !clearExportAuthBtn) {
-    return;
-  }
-
-  if (options.loading) {
-    exportAuthBadge.className = 'auth-badge';
-    exportAuthBadge.textContent = t('popup_exportAuthMissing', 'Not connected');
-    exportAuthStatus.textContent = options.message || t('popup_exportAuthLoading', 'Checking export authorization...');
-    exportAuthBtn.disabled = true;
-    clearExportAuthBtn.disabled = true;
-    return;
-  }
-
-  const hasError = Boolean(response?.lastError && response.lastError !== 'not_authorized');
-  const authorized = Boolean(response?.authorized);
-
-  exportAuthBadge.className = 'auth-badge';
-  if (authorized) {
-    exportAuthBadge.classList.add('authorized');
-    exportAuthBadge.textContent = t('popup_exportAuthConnected', 'Connected');
-  } else if (hasError) {
-    exportAuthBadge.classList.add('error');
-    exportAuthBadge.textContent = t('popup_exportAuthFailed', 'Needs attention');
-  } else {
-    exportAuthBadge.textContent = t('popup_exportAuthMissing', 'Not connected');
-  }
-
-  exportAuthStatus.textContent = getExportAuthMessage(response);
-  exportAuthBtn.disabled = authorized;
-  clearExportAuthBtn.disabled = !authorized && !hasError;
-}
-
-async function loadExportAuthStatus() {
-  renderExportAuthState(null, {
-    loading: true,
-    message: t('popup_exportAuthLoading', 'Checking export authorization...')
-  });
-
-  try {
-    const response = await sendMessage({ cmd: 'get-export-auth-status' });
-    renderExportAuthState(response);
-  } catch (error) {
-    renderExportAuthState({
-      authorized: false,
-      lastError: 'identity_flow_failed',
-      messageKey: 'exportAuthErrorIdentityFlowFailed'
-    });
-  }
-}
-
-async function handleBeginExportAuth() {
-  renderExportAuthState(null, {
-    loading: true,
-    message: t('popup_exportAuthWorking', 'Opening Google authorization...')
-  });
-
-  try {
-    const response = await sendMessage({ cmd: 'begin-export-auth' });
-    renderExportAuthState(response);
-  } catch (error) {
-    renderExportAuthState({
-      authorized: false,
-      lastError: 'identity_flow_failed',
-      messageKey: 'exportAuthErrorIdentityFlowFailed'
-    });
-  }
-}
-
-async function handleClearExportAuth() {
-  renderExportAuthState(null, {
-    loading: true,
-    message: t('popup_exportAuthClearing', 'Clearing Google authorization...')
-  });
-
-  try {
-    const response = await sendMessage({ cmd: 'clear-export-auth' });
-    renderExportAuthState(response);
-  } catch (error) {
-    renderExportAuthState({
-      authorized: false,
-      lastError: 'identity_flow_failed',
-      messageKey: 'exportAuthErrorIdentityFlowFailed'
-    });
-  }
 }
 
 // Load current tab info
@@ -244,12 +137,20 @@ function detectYouTubePageType(url) {
     addBtn.textContent = '';
     addBtn.append('➕ ', addVideoText);
   } else if (url.includes('/@') || url.includes('/channel/') || url.includes('/c/')) {
+    // Channel page (including /@user/shorts tab)
     youtubePageType = 'channel';
     const addChannelText = t('popup_addChannelVideos', 'Add Channel Videos to Notebook');
     addBtn.textContent = '';
     addBtn.append('📺 ', addChannelText);
     const channelLabel = t('popup_channel', 'Channel');
     currentUrlDiv.textContent = `📺 ${channelLabel}: ${currentTab.title.replace(' - YouTube', '')}`;
+  } else if (url.includes('/shorts/')) {
+    // Single Short (youtube.com/shorts/VIDEO_ID)
+    youtubePageType = 'shorts_single';
+    const addVideoText = t('popup_addVideo', 'Add Video to Notebook');
+    addBtn.textContent = '';
+    addBtn.append('➕ ', addVideoText);
+    currentUrlDiv.textContent = `🎬 Short: ${currentTab.title.replace(' - YouTube', '')}`;
   }
 
   // Show parse comments button for video pages
@@ -415,14 +316,24 @@ async function handleAddToNotebook() {
         }, 500);
       }
     } else {
-      // Single URL (video or regular page)
+      // Single URL (video, short, or regular page)
+      let sourceUrl = currentTab.url;
+
+      // Convert /shorts/VIDEO_ID to /watch?v=VIDEO_ID for NotebookLM
+      if (youtubePageType === 'shorts_single') {
+        const shortsMatch = sourceUrl.match(/\/shorts\/([a-zA-Z0-9_-]+)/);
+        if (shortsMatch) {
+          sourceUrl = `https://www.youtube.com/watch?v=${shortsMatch[1]}`;
+        }
+      }
+
       const loadingText = t('popup_loading', 'Adding to notebook...');
       showStatus('loading', loadingText);
 
       const response = await sendMessage({
         cmd: 'add-source',
         notebookId: notebookId,
-        url: currentTab.url
+        url: sourceUrl
       });
 
       if (response.error) {
@@ -560,14 +471,60 @@ function extractYouTubeUrls(pageType) {
       });
     }
   } else if (pageType === 'channel') {
-    // Get videos from channel page
-    const videos = document.querySelectorAll('ytd-rich-grid-media a#video-title-link, ytd-grid-video-renderer a#video-title');
-    videos.forEach(video => {
-      const href = video.getAttribute('href');
-      if (href && href.includes('/watch')) {
-        urls.push(`https://www.youtube.com${href.split('&')[0]}`);
+    // Helper: extract video ID from /watch or /shorts hrefs
+    function collectVideoId(href) {
+      if (!href) return;
+      try {
+        const url = new URL(href, 'https://www.youtube.com');
+        // Regular video
+        if (href.includes('/watch')) {
+          const videoId = url.searchParams.get('v');
+          if (videoId) urls.push(`https://www.youtube.com/watch?v=${videoId}`);
+          return;
+        }
+        // Short
+        const shortsMatch = url.pathname.match(/\/shorts\/([a-zA-Z0-9_-]+)/);
+        if (shortsMatch) {
+          urls.push(`https://www.youtube.com/watch?v=${shortsMatch[1]}`);
+        }
+      } catch (_) {}
+    }
+
+    // Channel pages have different layouts depending on YouTube version and tab
+    const selectors = [
+      // Modern layout (Videos tab, Home tab)
+      'ytd-rich-item-renderer a#video-title-link',
+      'ytd-rich-grid-media a#video-title-link',
+      // Older grid layout
+      'ytd-grid-video-renderer a#video-title',
+      // Compact/list layout
+      'ytd-video-renderer a#video-title',
+      // Shorts tab — reel/shelf renderers
+      'ytd-rich-item-renderer a[href*="/shorts/"]',
+      'ytd-reel-item-renderer a[href*="/shorts/"]',
+      // Fallback — any video/shorts link in the main content area
+      '#contents ytd-rich-item-renderer a[href*="/watch"]',
+      '#contents ytd-rich-item-renderer a[href*="/shorts/"]',
+      '#items ytd-grid-video-renderer a[href*="/watch"]'
+    ];
+
+    for (const selector of selectors) {
+      const videos = document.querySelectorAll(selector);
+      if (videos.length > 0) {
+        videos.forEach(video => collectVideoId(video.getAttribute('href')));
+        if (urls.length > 0) break;
       }
-    });
+    }
+
+    // Broad fallback scan
+    if (urls.length === 0) {
+      const allLinks = document.querySelectorAll(
+        '#primary a[href*="/watch"], #primary a[href*="/shorts/"], ' +
+        '#content a[href*="/watch"], #content a[href*="/shorts/"], ' +
+        'ytd-browse a[href*="/watch"], ytd-browse a[href*="/shorts/"]'
+      );
+      allLinks.forEach(link => collectVideoId(link.getAttribute('href')));
+    }
   }
 
   // Remove duplicates and limit to 50
