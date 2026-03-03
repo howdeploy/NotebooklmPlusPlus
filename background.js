@@ -1,7 +1,7 @@
-// Background Service Worker for Add to NotebookLM
-// Handles API calls and message passing between content scripts and popup
+// Background Service Worker for NotebookLM++
+// Handles NotebookLM import flows and export auth message routing.
 
-importScripts('lib/youtube-comments-api.js', 'lib/comments-to-md.js');
+importScripts('lib/youtube-comments-api.js', 'lib/comments-to-md.js', 'lib/export-auth.js');
 
 // ============================================
 // Utilities
@@ -1007,4 +1007,4 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   }
 });
 
-console.log('Add to NotebookLM: Background service worker started');
+console.log('NotebookLM++: Background service worker started');
