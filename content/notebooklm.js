@@ -9,12 +9,6 @@
   const EXPORT_BAR_ID = 'nlm-note-export-bar';
   const EXPORT_BUTTON_ID = 'nlm-note-export-btn';
   const EXPORT_COUNT_ID = 'nlm-note-export-count';
-  const EXPORT_STATUS_PANEL_ID = 'nlm-note-export-status';
-  const EXPORT_STATUS_TITLE_ID = 'nlm-note-export-status-title';
-  const EXPORT_STATUS_SUMMARY_ID = 'nlm-note-export-status-summary';
-  const EXPORT_STATUS_LIST_ID = 'nlm-note-export-status-list';
-  const EXPORT_STATUS_HINT_ID = 'nlm-note-export-status-hint';
-  const EXPORT_CLEAR_BUTTON_ID = 'nlm-note-export-clear-results';
   const NOTE_CHECKBOX_CLASS = 'nlm-note-checkbox';
   const NOTE_WRAPPER_CLASS = 'nlm-note-selection-chip';
   const NOTE_BADGE_CLASS = 'nlm-note-selection-badge';
@@ -23,7 +17,6 @@
   const EXPORT_SELECTION_STORAGE_KEY = 'nlmPendingNoteExportSelection';
   const EXTENSION_STYLE_ID = 'nlm-phase2-styles';
   const EXPORT_ACTION_SOURCE = 'phase2-note-selection';
-  const EXPORT_RESULTS_STORAGE_KEY = 'nlmLastNoteExportBatch';
 
   const NOTE_CONTAINER_SELECTORS = [
     'artifact-library-note',
@@ -201,14 +194,7 @@
   let selectionLoadedForNotebook = new Set();
   let saveSelectionTimeout = null;
   let exportInProgress = false;
-  let exportStatusPanel = null;
-  let exportStatusTitle = null;
-  let exportStatusSummary = null;
-  let exportStatusList = null;
-  let exportStatusHint = null;
-  let exportClearButton = null;
-  let latestExportBatch = null;
-  let exportProgressState = null;
+  // Status panel variables removed — export runs silently.
 
   function getLang() {
     return (document.documentElement.lang || navigator.language || 'en').substring(0, 2).toLowerCase();
@@ -418,12 +404,22 @@
   }
 
   function ensureActionHost() {
-    const anchor = getHeaderAnchor();
-    if (!anchor || !anchor.targetContainer) {
+    const notesContainer = findNotesContainer();
+
+    let host = document.getElementById(ACTION_HOST_ID);
+
+    // Notes list not visible (e.g. a note is open) — hide the host
+    if (!notesContainer) {
+      if (host && host.isConnected) host.remove();
       return null;
     }
 
-    let host = document.getElementById(ACTION_HOST_ID);
+    const anchor = getHeaderAnchor();
+    if (!anchor || !anchor.targetContainer) {
+      if (host && host.isConnected) host.remove();
+      return null;
+    }
+
     if (!host) {
       host = document.createElement('div');
       host.id = ACTION_HOST_ID;
@@ -946,117 +942,7 @@
         color: #a6adc8;
       }
 
-      #${EXPORT_STATUS_PANEL_ID} {
-        display: none;
-        flex: 1 1 100%;
-        margin-top: 10px;
-        padding: 14px 16px;
-        border-radius: 8px;
-        background: #1e1e2e;
-        border: 1px solid #45475a;
-        border-left: 3px solid #89b4fa;
-        color: #cdd6f4;
-        font-family: 'Fira Code', 'Google Sans', Roboto, monospace;
-      }
-
-      #${EXPORT_STATUS_TITLE_ID} {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        margin-bottom: 8px;
-        font: 700 13px/1.3 'Fira Code', 'Google Sans', Roboto, monospace;
-        color: #89b4fa;
-      }
-
-      #${EXPORT_STATUS_SUMMARY_ID} {
-        margin-bottom: 10px;
-        font: 500 12px/1.45 'Fira Code', 'Google Sans', Roboto, monospace;
-        color: #bac2de;
-      }
-
-      #${EXPORT_STATUS_LIST_ID} {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-      }
-
-      .nlm-export-result-row {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: 12px;
-        padding: 10px 12px;
-        border-radius: 8px;
-        background: #313244;
-        border: 1px solid #45475a;
-      }
-
-      .nlm-export-result-row[data-status="success"] {
-        border-color: rgba(166, 227, 161, 0.3);
-      }
-
-      .nlm-export-result-row[data-status="error"] {
-        border-color: rgba(243, 139, 168, 0.3);
-      }
-
-      .nlm-export-result-title {
-        flex: 1 1 auto;
-        min-width: 0;
-        font: 600 12px/1.35 'Fira Code', 'Google Sans', Roboto, monospace;
-        color: #cdd6f4;
-      }
-
-      .nlm-export-result-meta {
-        margin-top: 3px;
-        font: 500 11px/1.35 'Fira Code', 'Google Sans', Roboto, monospace;
-        color: #6c7086;
-      }
-
-      .nlm-export-result-badge {
-        flex: 0 0 auto;
-        padding: 5px 8px;
-        border-radius: 6px;
-        font: 700 10px/1 'Fira Code', 'Google Sans', Roboto, monospace;
-        letter-spacing: 0.02em;
-        text-transform: uppercase;
-      }
-
-      .nlm-export-result-badge[data-status="success"] {
-        background: rgba(166, 227, 161, 0.12);
-        color: #a6e3a1;
-      }
-
-      .nlm-export-result-badge[data-status="error"] {
-        background: rgba(243, 139, 168, 0.12);
-        color: #f38ba8;
-      }
-
-      .nlm-export-result-badge[data-status="pending"] {
-        background: rgba(137, 180, 250, 0.12);
-        color: #89b4fa;
-      }
-
-      #${EXPORT_STATUS_HINT_ID} {
-        margin-top: 10px;
-        font: 500 11px/1.45 'Fira Code', 'Google Sans', Roboto, monospace;
-        color: #6c7086;
-      }
-
-      #${EXPORT_CLEAR_BUTTON_ID} {
-        border: 1px solid #45475a;
-        background: transparent;
-        color: #89b4fa;
-        padding: 7px 10px;
-        border-radius: 6px;
-        font: 600 11px/1 'Fira Code', 'Google Sans', Roboto, monospace;
-        cursor: pointer;
-        transition: background 0.2s ease;
-      }
-
-      #${EXPORT_CLEAR_BUTTON_ID}:hover {
-        background: rgba(137, 180, 250, 0.1);
-      }
+      /* Status panel styles removed — export runs silently */
     `;
     document.head.appendChild(style);
   }
@@ -1242,7 +1128,10 @@
 
       const badge = document.createElement('span');
       badge.className = NOTE_BADGE_CLASS;
+      badge.style.display = 'none';
       badge.innerHTML = `<strong>NotebookLM++</strong> ${t('noteExportBadge')}`;
+
+      wrapper.style.cssText = 'display:flex;align-items:center;justify-content:center;flex-shrink:0;width:28px;padding:0;margin:0;cursor:pointer;border-right:1px solid #45475a;background:transparent';
 
       wrapper.appendChild(checkbox);
       wrapper.appendChild(badge);
@@ -1251,6 +1140,10 @@
     if (wrapper.parentElement !== note.element) {
       note.element.prepend(wrapper);
     }
+
+    // Force flex layout on the note element (Angular styles may override stylesheet)
+    note.element.style.display = 'flex';
+    note.element.style.alignItems = 'stretch';
 
     const selectedSet = ensureSelectionSet(getNotebookScopeId());
     updateNoteVisualState(note, selectedSet.has(note.key));
@@ -1287,46 +1180,7 @@
     return exportActionBar;
   }
 
-  function createExportStatusPanel() {
-    if (exportStatusPanel) {
-      return exportStatusPanel;
-    }
-
-    exportStatusPanel = document.createElement('section');
-    exportStatusPanel.id = EXPORT_STATUS_PANEL_ID;
-    exportStatusPanel.dataset.nlmIgnore = 'true';
-
-    exportStatusTitle = document.createElement('div');
-    exportStatusTitle.id = EXPORT_STATUS_TITLE_ID;
-
-    const titleText = document.createElement('span');
-    titleText.textContent = t('noteExportStatusFinished');
-
-    exportClearButton = document.createElement('button');
-    exportClearButton.id = EXPORT_CLEAR_BUTTON_ID;
-    exportClearButton.type = 'button';
-    exportClearButton.textContent = t('noteExportResultsClear');
-    exportClearButton.addEventListener('click', handleClearExportResults);
-
-    exportStatusTitle.appendChild(titleText);
-    exportStatusTitle.appendChild(exportClearButton);
-
-    exportStatusSummary = document.createElement('div');
-    exportStatusSummary.id = EXPORT_STATUS_SUMMARY_ID;
-
-    exportStatusList = document.createElement('div');
-    exportStatusList.id = EXPORT_STATUS_LIST_ID;
-
-    exportStatusHint = document.createElement('div');
-    exportStatusHint.id = EXPORT_STATUS_HINT_ID;
-
-    exportStatusPanel.appendChild(exportStatusTitle);
-    exportStatusPanel.appendChild(exportStatusSummary);
-    exportStatusPanel.appendChild(exportStatusList);
-    exportStatusPanel.appendChild(exportStatusHint);
-
-    return exportStatusPanel;
-  }
+  // createExportStatusPanel removed — export runs silently.
 
   function findNotesContainer() {
     // Find the Studio panel that contains the artifact-library notes
@@ -1345,52 +1199,23 @@
 
   function mountExportActionBar() {
     const bar = createExportActionBar();
-
-    // Already mounted and connected — nothing to do
-    if (bar.isConnected) return;
-
-    // Mount above the notes container in the Studio panel
     const notesContainer = findNotesContainer();
-    if (notesContainer && notesContainer.parentElement) {
-      notesContainer.parentElement.insertBefore(bar, notesContainer);
-      bar.style.cssText = 'position:static;margin:0 12px 8px';
+
+    // Notes list not visible (e.g. a note is open) — detach and hide
+    if (!notesContainer || !notesContainer.parentElement) {
+      if (bar.isConnected) bar.remove();
       return;
     }
 
-    // Fallback: try the action host
-    const host = ensureActionHost();
-    if (host) {
-      host.prepend(bar);
-      bar.style.cssText = 'position:static';
-      return;
-    }
+    // Already in the right place
+    if (bar.isConnected && bar.parentElement === notesContainer.parentElement) return;
 
-    addFloatingFallback(bar, '130px', '420px');
+    // Mount above the notes container
+    notesContainer.parentElement.insertBefore(bar, notesContainer);
+    bar.style.cssText = 'position:static;margin:0 12px 8px';
   }
 
-  function mountExportStatusPanel() {
-    const panel = createExportStatusPanel();
-
-    // Already mounted and connected — nothing to do
-    if (panel.isConnected) return;
-
-    // Mount right after the export bar
-    const bar = document.getElementById(EXPORT_BAR_ID);
-    if (bar && bar.parentElement) {
-      bar.parentElement.insertBefore(panel, bar.nextSibling);
-      panel.style.cssText = 'position:static;margin:0 12px 8px';
-      return;
-    }
-
-    const host = ensureActionHost();
-    if (host) {
-      host.appendChild(panel);
-      panel.style.cssText = 'position:static';
-      return;
-    }
-
-    addFloatingFallback(panel, '190px', '420px');
-  }
+  // Status panel removed — export runs silently.
 
   function getSelectedNotes() {
     const notebookId = getNotebookScopeId();
@@ -1411,7 +1236,6 @@
 
   function syncExportActionUi() {
     mountExportActionBar();
-    mountExportStatusPanel();
 
     const notebookId = getNotebookScopeId();
     const selectedSet = notebookId ? ensureSelectionSet(notebookId) : new Set();
@@ -1425,8 +1249,7 @@
       : t('noteExportAction');
     exportCount.textContent = selectedCount > 0
       ? `${selectedCount} ${t('noteExportSelected')}`
-      : t('noteExportUnavailable');
-    renderExportStatusPanel();
+      : '';
   }
 
   function getAccessibleText(element) {
@@ -1538,6 +1361,37 @@
     return null;
   }
 
+  function suppressNewTabs() {
+    const origOpen = window.open;
+    window.open = function() { return null; };
+
+    const origAssign = Object.getOwnPropertyDescriptor(Location.prototype, 'assign');
+    if (origAssign && origAssign.configurable) {
+      Object.defineProperty(Location.prototype, 'assign', {
+        configurable: true,
+        value: function() {}
+      });
+    }
+
+    // Also intercept click-created <a target="_blank"> navigations
+    function blockBlankLinks(e) {
+      const link = e.target.closest?.('a[target="_blank"]');
+      if (link) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    }
+    document.addEventListener('click', blockBlankLinks, true);
+
+    return function restore() {
+      window.open = origOpen;
+      if (origAssign && origAssign.configurable) {
+        Object.defineProperty(Location.prototype, 'assign', origAssign);
+      }
+      document.removeEventListener('click', blockBlankLinks, true);
+    };
+  }
+
   async function triggerNativeNoteExport(note) {
     const noteElement = note?.element;
     if (!(noteElement instanceof HTMLElement)) {
@@ -1552,225 +1406,31 @@
       return { success: false, reason: 'native_control_missing' };
     }
 
-    nativeTrigger.element.click();
-
-    if (nativeTrigger.type === 'direct') {
-      await wait(800);
-      return { success: true, mode: 'direct' };
-    }
-
-    await wait(250);
-    const menuItem = findNativeMenuExportItem();
-    if (!menuItem) {
-      return { success: false, reason: 'native_menu_item_missing' };
-    }
-
-    menuItem.click();
-    await wait(900);
-    return { success: true, mode: 'menu' };
-  }
-
-  async function storeExportBatchResult(notebookId, results) {
-    latestExportBatch = {
-      notebookId,
-      results,
-      total: results.length,
-      successCount: results.filter((result) => result.success).length,
-      failedCount: results.filter((result) => !result.success).length,
-      updatedAt: Date.now()
-    };
+    const restoreTabs = suppressNewTabs();
 
     try {
-      await chrome.storage.local.set({
-        [EXPORT_RESULTS_STORAGE_KEY]: latestExportBatch
-      });
-    } catch (error) {
-      // Ignore storage errors for now.
-    }
-  }
+      nativeTrigger.element.click();
 
-  async function loadPersistedExportResults(notebookId) {
-    latestExportBatch = null;
-
-    if (!notebookId) {
-      return;
-    }
-
-    try {
-      const stored = await chrome.storage.local.get([EXPORT_RESULTS_STORAGE_KEY]);
-      const batch = stored[EXPORT_RESULTS_STORAGE_KEY];
-      if (batch && batch.notebookId === notebookId && Array.isArray(batch.results)) {
-        latestExportBatch = batch;
+      if (nativeTrigger.type === 'direct') {
+        await wait(800);
+        return { success: true, mode: 'direct' };
       }
-    } catch (error) {
-      // Ignore storage restore failures and render without persisted results.
-    }
-  }
 
-  async function handleClearExportResults() {
-    latestExportBatch = null;
-    exportProgressState = null;
-
-    try {
-      await chrome.storage.local.remove([EXPORT_RESULTS_STORAGE_KEY]);
-      if (chrome.runtime?.sendMessage) {
-        await chrome.runtime.sendMessage({ cmd: 'clear-note-export-results' });
+      await wait(250);
+      const menuItem = findNativeMenuExportItem();
+      if (!menuItem) {
+        return { success: false, reason: 'native_menu_item_missing' };
       }
-    } catch (error) {
-      // Keep UI cleared even if storage cleanup fails.
-    }
 
-    renderExportStatusPanel();
-  }
-
-  function formatExportTimestamp(timestamp) {
-    if (!timestamp) {
-      return '';
-    }
-
-    try {
-      return new Date(timestamp).toLocaleTimeString(getLang(), {
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    } catch (error) {
-      return '';
+      menuItem.click();
+      await wait(900);
+      return { success: true, mode: 'menu' };
+    } finally {
+      restoreTabs();
     }
   }
 
-  function getResultModeLabel(result) {
-    if (result?.mode === 'direct') {
-      return t('noteExportResultModeDirect');
-    }
-
-    if (result?.mode === 'menu') {
-      return t('noteExportResultModeMenu');
-    }
-
-    return t('noteExportResultModeUnknown');
-  }
-
-  function getResultReasonLabel(result) {
-    if (!result || result.success) {
-      return getResultModeLabel(result);
-    }
-
-    if (result.reason === 'native_control_missing' || result.reason === 'native_menu_item_missing') {
-      return t('noteExportNativeMissing');
-    }
-
-    if (result.reason === 'note_missing') {
-      return 'note_missing';
-    }
-
-    return result.reason || t('noteExportResultError');
-  }
-
-  function buildExportSummaryText(summary) {
-    const pieces = [
-      `${t('noteExportProgressSummary')}: ${summary.completed}/${summary.total}`,
-      `${t('noteExportSucceededCount')}: ${summary.successCount}`,
-      `${t('noteExportFailedCount')}: ${summary.failedCount}`
-    ];
-    const timeLabel = formatExportTimestamp(summary.updatedAt || summary.startedAt);
-    if (timeLabel) {
-      pieces.push(timeLabel);
-    }
-    return pieces.join(' · ');
-  }
-
-  function renderExportResultRows(results, total) {
-    exportStatusList.replaceChildren();
-
-    const rows = Array.isArray(results) ? results.slice() : [];
-    if (rows.length === 0 && !exportInProgress) {
-      const empty = document.createElement('div');
-      empty.className = 'nlm-export-result-row';
-      empty.dataset.status = 'pending';
-      empty.textContent = t('noteExportResultsEmpty');
-      exportStatusList.appendChild(empty);
-      return;
-    }
-
-    rows.forEach((result) => {
-      const row = document.createElement('div');
-      row.className = 'nlm-export-result-row';
-      row.dataset.status = result.success ? 'success' : (result.pending ? 'pending' : 'error');
-
-      const body = document.createElement('div');
-
-      const title = document.createElement('div');
-      title.className = 'nlm-export-result-title';
-      title.textContent = result.title || result.key || 'Untitled note';
-
-      const meta = document.createElement('div');
-      meta.className = 'nlm-export-result-meta';
-      meta.textContent = result.pending
-        ? t('noteExportResultPending')
-        : getResultReasonLabel(result);
-
-      body.appendChild(title);
-      body.appendChild(meta);
-
-      const badge = document.createElement('span');
-      badge.className = 'nlm-export-result-badge';
-      badge.dataset.status = result.success ? 'success' : (result.pending ? 'pending' : 'error');
-      badge.textContent = result.success
-        ? t('noteExportResultReady')
-        : (result.pending ? `${rows.length}/${total}` : t('noteExportResultError'));
-
-      row.appendChild(body);
-      row.appendChild(badge);
-      exportStatusList.appendChild(row);
-    });
-  }
-
-  function renderExportStatusPanel() {
-    if (!exportStatusPanel || !exportStatusSummary || !exportStatusList || !exportStatusHint || !exportClearButton) {
-      return;
-    }
-
-    const notebookId = getNotebookScopeId();
-    const activeBatch = latestExportBatch && latestExportBatch.notebookId === notebookId ? latestExportBatch : null;
-    const activeProgress = exportProgressState && exportProgressState.notebookId === notebookId ? exportProgressState : null;
-
-    if (!activeProgress && !activeBatch) {
-      exportStatusPanel.style.display = 'none';
-      return;
-    }
-
-    exportStatusPanel.style.display = 'block';
-
-    const titleNode = exportStatusTitle.querySelector('span');
-    if (titleNode) {
-      titleNode.textContent = activeProgress ? t('noteExportStatusRunning') : t('noteExportStatusFinished');
-    }
-
-    exportClearButton.style.display = activeProgress ? 'none' : 'inline-flex';
-
-    if (activeProgress) {
-      exportStatusSummary.textContent = buildExportSummaryText(activeProgress);
-      const pendingRows = activeProgress.pendingTitles.map((title) => ({
-        title,
-        pending: true
-      }));
-      renderExportResultRows(activeProgress.results.concat(pendingRows), activeProgress.total);
-      exportStatusHint.textContent = t('noteExportResultsHint');
-      return;
-    }
-
-    const completed = {
-      completed: activeBatch.total || activeBatch.results.length,
-      total: activeBatch.total || activeBatch.results.length,
-      successCount: activeBatch.successCount ?? activeBatch.results.filter((result) => result.success).length,
-      failedCount: activeBatch.failedCount ?? activeBatch.results.filter((result) => !result.success).length,
-      updatedAt: activeBatch.updatedAt
-    };
-
-    exportStatusSummary.textContent = buildExportSummaryText(completed);
-    renderExportResultRows(activeBatch.results, completed.total);
-    exportStatusHint.textContent = t('noteExportResultsHint');
-  }
+  // Export status/results functions removed — export runs silently.
 
   async function handleExportActionClick() {
     const notebookId = getNotebookScopeId();
@@ -1791,21 +1451,10 @@
     }
 
     exportInProgress = true;
-    exportProgressState = {
-      notebookId,
-      total: selectedNotes.length,
-      completed: 0,
-      successCount: 0,
-      failedCount: 0,
-      results: [],
-      pendingTitles: selectedNotes.map((note) => note.title),
-      startedAt: Date.now()
-    };
     syncExportActionUi();
-    exportCount.textContent = t('noteExportRunning');
 
     try {
-      const response = await chrome.runtime.sendMessage({
+      await chrome.runtime.sendMessage({
         cmd: 'set-note-export-selection',
         notebookId,
         noteKeys: selectedNotes.map((note) => note.key),
@@ -1813,49 +1462,12 @@
         source: EXPORT_ACTION_SOURCE
       });
 
-      if (response?.error) {
-        showToast(`Error: ${response.error}`, 'error');
-        return;
-      }
-
-      const results = [];
       for (const selectedNote of selectedNotes) {
         const liveNote = noteRegistry.get(selectedNote.key);
-        const exportResult = await triggerNativeNoteExport(liveNote);
-        const resultEntry = {
-          key: selectedNote.key,
-          title: selectedNote.title,
-          ...exportResult
-        };
-        results.push(resultEntry);
-        exportProgressState.results.push(resultEntry);
-        exportProgressState.completed = results.length;
-        exportProgressState.successCount = results.filter((result) => result.success).length;
-        exportProgressState.failedCount = results.length - exportProgressState.successCount;
-        exportProgressState.pendingTitles = selectedNotes
-          .slice(results.length)
-          .map((note) => note.title);
-        renderExportStatusPanel();
-      }
-
-      await storeExportBatchResult(notebookId, results);
-      exportProgressState = null;
-      renderExportStatusPanel();
-
-      const successCount = results.filter((result) => result.success).length;
-      const failedCount = results.length - successCount;
-
-      if (successCount > 0 && failedCount === 0) {
-        showToast(`${t('noteExportNativeClicked')} · ${successCount}/${results.length}`, 'success');
-      } else if (successCount > 0) {
-        showToast(`${t('noteExportCompleted')} · ${successCount}/${results.length}`, 'info');
-      } else {
-        showToast(t('noteExportNativeMissing'), 'error');
+        await triggerNativeNoteExport(liveNote);
       }
     } catch (error) {
-      showToast(`${t('noteExportFailed')}: ${error.message}`, 'error');
-      exportProgressState = null;
-      renderExportStatusPanel();
+      // silent
     } finally {
       exportInProgress = false;
       syncExportActionUi();
@@ -1892,9 +1504,6 @@
       }
       if (exportActionBar) {
         exportActionBar.style.display = 'none';
-      }
-      if (exportStatusPanel) {
-        exportStatusPanel.style.display = 'none';
       }
       noteRegistry.clear();
       return;
@@ -1937,7 +1546,6 @@
 
     currentNotebookId = notebookId;
     await loadPersistedSelection(notebookId);
-    await loadPersistedExportResults(notebookId);
     refreshInjectedUi();
     startObserver();
   }

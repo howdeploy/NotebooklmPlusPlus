@@ -32,6 +32,9 @@ dist/
 # Claude Code
 .claude/
 
+# Planning files (local only)
+.planning/
+
 # Local development
 *.log
 *.local
