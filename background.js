@@ -538,7 +538,8 @@ async function handleMessage(request, sender) {
   currentAuthuser = storage.selectedAccount || storage.selected_account || 0;
 
   // Commands that don't require tokens
-  const noTokenCommands = ['list-accounts', 'ping', 'get-current-tab', 'get-all-tabs', 'get-parse-status', 'cancel-parse'];
+  const exportAuthCommands = ['get-export-auth-status', 'begin-export-auth', 'clear-export-auth'];
+  const noTokenCommands = ['list-accounts', 'ping', 'get-current-tab', 'get-all-tabs', 'get-parse-status', 'cancel-parse', ...exportAuthCommands];
 
   // Ensure we have tokens for API calls
   if (!noTokenCommands.includes(cmd)) {
@@ -552,6 +553,15 @@ async function handleMessage(request, sender) {
   switch (cmd) {
     case 'ping':
       return { ok: true };
+
+    case 'get-export-auth-status':
+      return await getExportAuthStatus();
+
+    case 'begin-export-auth':
+      return await beginExportAuth();
+
+    case 'clear-export-auth':
+      return await clearExportAuth();
 
     case 'list-accounts':
       return await listAccounts();

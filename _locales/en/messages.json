@@ -147,6 +147,30 @@
     "message": "The current import tools remain available and ready to use.",
     "description": "App continuity line"
   },
+  "exportAuthStatusAuthorized": {
+    "message": "Google export access is authorized.",
+    "description": "Export auth authorized status"
+  },
+  "exportAuthStatusNotAuthorized": {
+    "message": "Google export access is not authorized yet.",
+    "description": "Export auth unauthorized status"
+  },
+  "exportAuthStatusCleared": {
+    "message": "Google export access has been cleared.",
+    "description": "Export auth cleared status"
+  },
+  "exportAuthErrorMissingClientId": {
+    "message": "Google export auth is not configured yet. Add the extension OAuth client ID to continue.",
+    "description": "Export auth missing client ID error"
+  },
+  "exportAuthErrorScopeMissing": {
+    "message": "Google export auth is missing the required Drive file scope.",
+    "description": "Export auth missing scope error"
+  },
+  "exportAuthErrorIdentityFlowFailed": {
+    "message": "Google export authorization did not complete. Try the identity flow again.",
+    "description": "Export auth identity flow failure"
+  },
   "bulk_title": {
     "message": "Bulk Import",
     "description": "Bulk import page title"
