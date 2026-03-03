@@ -72,25 +72,25 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| NINT-01 | Phase TBD | Pending |
-| NINT-02 | Phase TBD | Pending |
-| NINT-03 | Phase TBD | Pending |
-| NINT-04 | Phase TBD | Pending |
-| GEXP-01 | Phase TBD | Pending |
-| GEXP-02 | Phase TBD | Pending |
-| GEXP-03 | Phase TBD | Pending |
-| GEXP-04 | Phase TBD | Pending |
-| EXFB-01 | Phase TBD | Pending |
-| EXFB-02 | Phase TBD | Pending |
-| EXFB-03 | Phase TBD | Pending |
-| BASE-01 | Phase TBD | Pending |
-| BASE-02 | Phase TBD | Pending |
+| NINT-01 | Phase 2 | Pending |
+| NINT-02 | Phase 2 | Pending |
+| NINT-03 | Phase 2 | Pending |
+| NINT-04 | Phase 2 | Pending |
+| GEXP-01 | Phase 1 | Pending |
+| GEXP-02 | Phase 3 | Pending |
+| GEXP-03 | Phase 3 | Pending |
+| GEXP-04 | Phase 1 | Pending |
+| EXFB-01 | Phase 4 | Pending |
+| EXFB-02 | Phase 4 | Pending |
+| EXFB-03 | Phase 4 | Pending |
+| BASE-01 | Phase 1 | Pending |
+| BASE-02 | Phase 1 | Pending |
 
 **Coverage:**
 - v1 requirements: 13 total
-- Mapped to phases: 0
-- Unmapped: 13 ⚠️
+- Mapped to phases: 13
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-03*
-*Last updated: 2026-03-03 after initialization*
+*Last updated: 2026-03-03 after roadmap creation*
