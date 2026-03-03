@@ -1,5 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import {
+  validateManifestOauthClientId
+} from '../scripts/check-extension-oauth-client.mjs';
 
 const repoRoot = path.resolve(new URL('..', import.meta.url).pathname);
 
@@ -28,6 +31,8 @@ const appHtml = read('app/app.html');
 const appJs = read('app/app.js');
 const backgroundJs = read('background.js');
 const localeEn = read('_locales/en/messages.json');
+
+validateManifestOauthClientId(manifest);
 
 assert(
   manifest.short_name === 'NotebookLM++',

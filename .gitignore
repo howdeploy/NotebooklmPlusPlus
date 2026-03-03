@@ -35,6 +35,7 @@ dist/
 # Local development
 *.log
 *.local
+oauth-extension-client.local.json
 
 # Test files
 test/
