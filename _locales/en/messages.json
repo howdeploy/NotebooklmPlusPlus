@@ -1,11 +1,19 @@
 {
   "extName": {
-    "message": "Add to NotebookLM",
+    "message": "NotebookLM++",
     "description": "Extension name"
   },
   "extDescription": {
-    "message": "Import YouTube videos and web pages to NotebookLM with one click. Bulk import, playlist support, and more.",
+    "message": "NotebookLM companion for importing web pages, YouTube content, and bulk sources while keeping the current import tools available.",
     "description": "Extension description"
+  },
+  "popup_title": {
+    "message": "NotebookLM++",
+    "description": "Popup title"
+  },
+  "popup_continuity": {
+    "message": "Your current import tools remain available here.",
+    "description": "Popup continuity line"
   },
   "popup_currentPage": {
     "message": "Current page:",
@@ -128,12 +136,16 @@
     "description": "Channel label"
   },
   "app_title": {
-    "message": "Add to NotebookLM",
+    "message": "NotebookLM++",
     "description": "App page title"
   },
   "app_description": {
-    "message": "Your toolkit for working with NotebookLM",
+    "message": "Companion tools for NotebookLM import workflows",
     "description": "App page description"
+  },
+  "app_continuity": {
+    "message": "The current import tools remain available and ready to use.",
+    "description": "App continuity line"
   },
   "bulk_title": {
     "message": "Bulk Import",
@@ -240,7 +252,7 @@
     "description": "About section title"
   },
   "settings_aboutText": {
-    "message": "Chrome extension for importing YouTube videos, playlists, channels, web pages and comments into Google NotebookLM. Supports bulk import and multiple Google accounts.",
+    "message": "NotebookLM++ is a Chrome extension companion for importing YouTube videos, playlists, channels, web pages, and comments into NotebookLM. It keeps the existing bulk import and multi-account workflows available.",
     "description": "About text"
   },
   "settings_openNotebookLM": {
